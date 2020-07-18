@@ -1,0 +1,7 @@
+%nprocshared=64
+%mem=100GB
+# Opt=ReadFreeze cam-b3lyp/6-311++g** empiricaldispersion=gd3
+
+Precursor Fragment
+
+0 1
