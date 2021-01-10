@@ -24,7 +24,7 @@ sys.path.append("../functions")
 
 from Application_functions import *
 from functions_folding import *
-from Unfolding_new import Unfolding
+from Unfolding import Unfolding
 atoms = np.array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 29, 30, 31],dtype=int)
 pattern_start = "Input\s*orientation:\s*-*\s*Center\s*Atomic\s*Atomic\s*Coordinates\s*\(Angstroms\)\s*Number\s*Number\s*Type\s*X\s*Y\s*Z\s*-*"
 pattern_start = "orientation:\s*-*\s*Center\s*Atomic\s*Atomic\s*Coordinates\s*\(Angstroms\)\s*Number\s*Number\s*Type\s*X\s*Y\s*Z\s*-*"
