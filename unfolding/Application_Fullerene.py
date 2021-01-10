@@ -8,7 +8,7 @@ from ui_scan import *
 from Application_functions import *
 from make_hdf5 import *
 from load_hdf5 import *
-from Unfolding_new import Unfolding
+from Unfolding import Unfolding
 from PyQt5.QtWidgets import QMainWindow, QAction, qApp, QApplication,  QFileDialog, QWidget, QMessageBox, QInputDialog, QShortcut
 from PyQt5.QtGui import QIcon, QHBoxLayout, QVBoxLayout, QPushButton, QCheckBox, QSpinBox, QKeySequence, QGridLayout, QLabel
 #from PyQt5.Qt3DExtras import QSphereMesh
@@ -87,7 +87,7 @@ class Unfolding_App(QMainWindow, ui_main.Ui_MainWindow):
         self.unfolding = None
         self.mesh = None
         self.status = False
-        self.filename = "/home/ben/Nextcloud/Documents/KU/Master_thesis/thesis-carbon-folding/C_20_data/C60data.h5"
+        self.filename = "../data/unfolding_graph/C60data.h5"
         self.root = 0
 
         pyqtgraph.setConfigOption('background', 'w') #before loading widget
