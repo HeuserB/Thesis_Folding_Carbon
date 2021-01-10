@@ -129,13 +129,14 @@ class Unfolding(object):
 
         ### Initialise the hinge angles as pi = Flat precursor molecule ###
         self.hinge_angles = np.ones(len(self.hinges[0])) * np.pi
-        self.update_hinge_angles()
+        #self.update_hinge_angles()
 
         ### Define the hinges, which have not yet reached their optimal value (all) in a list so they are ordered by ther depth from the root node ###
         self.open_hinges = [[0,1,2],[3,4,5,6,7,8],[9,10,11],[12,13,14]]
+        self.all_hinges = [[0,1,2],[3,4,5,6,7,8],[9,10,11],[12,13,14]]
 
         ### Define the steps to close the hinges ###
-        self.num_of_steps = 500
+        self.num_of_steps = 20000
         self.angle_steps = np.linspace(np.pi, self.angles_f,self.num_of_steps + 1)
         self.step_size =  (np.pi - self.angles_f) / self.num_of_steps
         self.stage = 0
@@ -171,6 +172,13 @@ class Unfolding(object):
         self.iz = np.repeat(np.array([[[0,1,2]]]),self.n_carbon,0)
         self.scale=1e-1
         self.coulomb = repulsion_constant = 2.10935 * 1e5 * 36.
+
+        ###
+        ### Set the outmost three hinges to a negative step so they get opened during the process 
+        ### this is only to move the carbon atoms closer together for the additional PCCP calculations
+        #self.hinges[1][-3:] = np.flip(self.hinges[1][-3:],axis=1)
+        ###
+        ###
 
     def init_springs(self):
         ### Set all the sprig information to Hexagon-hexagon values ###
@@ -315,27 +323,24 @@ class Unfolding(object):
         self.scale *= 0.9
 
     def update_hinge_angles(self):
-        self.face_normals[self.face_type[0]] = mean_normal(self.vertex_coords, self.pentagons)
-        self.face_normals[self.face_type[1]] = mean_normal(self.vertex_coords, self.hexagons)
         self.hinge_angles = angle_vec(self.face_normals[np.array(self.hinges[0])[:,0]], self.face_normals[np.array(self.hinges[0])[:,1]] , degrees=False)
 
     def close_unfolding(self):
-        if self.stage < self.num_of_steps:
             #for active_hinge in self.open_hinges[0]:
-            for hinges in self.open_hinges:
-                for active_hinge in hinges:
+        for hinges in self.open_hinges:
+            for active_hinge in hinges:
                 #step_size = self.angles_hinge[active_hinge] - self.angle_steps[self.stage + 1][active_hinge]
-                    step_size = self.step_size[active_hinge]
-                    affected_children_periphery = add_periphery(self.affected_children, self.parent_atom, self.n_carbon)
-                    update_transform(self.vertex_coords, active_hinge, self.hinges, affected_children_periphery, delta_phi = step_size)
-                    #self.update_face_normals()
-                    #self.update_hinge_angles()
+                step_size = self.step_size[active_hinge]
+                affected_children_periphery = add_periphery(self.affected_children, self.parent_atom, self.n_carbon)
+                update_transform(self.vertex_coords, active_hinge, self.hinges, affected_children_periphery, delta_phi = step_size)
+                #self.update_face_normals()
+                #self.update_hinge_angles()
             
-            self.stage += 1
-            if self.stage == self.num_of_steps:
-                self.open_hinges.pop(0)
-                if len(self.open_hinges) > 0:
-                    self.stage = 0
+            #self.stage += 1
+            #if self.stage == self.num_of_steps:
+                #self.open_hinges.pop(0)
+            #    if len(self.open_hinges) > 0:
+            #        self.stage = 0
 
             self.update_mesh()
             #for face in range(len(self.graph_unfolding_faces)):

@@ -1,6 +1,7 @@
 import numpy as np
 import re
 import h5py
+NA = np.newaxis
 
 def read_unfolding(filename):
     hf = h5py.File(filename, 'r')
@@ -54,3 +55,24 @@ def read_geometry(file):
     tmp = re.sub("\\\\",'',tmp)
     tmp = np.fromstring(tmp,sep=',').reshape(-1,3)
     return tmp
+
+def fit_plane(points):
+    N = len(points)
+    CM = (np.sum(points,axis=0)/N)
+    M = points - CM[NA,:]
+    U, S, V = np.linalg.svd(M)
+    n = V[np.argmin(S)]
+    ev = np.min(S)
+    err = np.mean(np.abs((M@n)))
+    d = CM@n
+    return n, err, ev, d
+
+def fit_all_planes(unfolding):
+    geometry = unfolding.vertex_coords
+    normals, errors, evals = np.zeros([len(unfolding.graph_unfolding_faces),3]), np.zeros([len(unfolding.graph_unfolding_faces)]), np.zeros([len(unfolding.graph_unfolding_faces)])
+    ds = np.zeros([len(unfolding.graph_unfolding_faces)])
+    for j, face in enumerate(unfolding.graph_unfolding_faces):
+        points = geometry[face]
+        n, err, ev, d = fit_plane(points)
+        normals[j], errors[j], evals[j], ds[j] = n, err, ev, d
+    return normals, errors, evals, ds
