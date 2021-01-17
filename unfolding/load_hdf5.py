@@ -27,9 +27,32 @@ sys.path.append("../thesis-carbon-folding/Unfolding/")
 #sys.path.append("../../fullerene-unfolding/")
 
 # In[2]:
+def fit_rms(ref_c,c):
+    # move geometric center to the origin
+    ref_trans = np.average(ref_c, axis=0)
+    ref_c = ref_c - ref_trans
+    c_trans = np.average(c, axis=0)
+    c = c - c_trans
 
+    # covariance matrix
+    C = np.dot(c.T, ref_c)
 
-def load_h5(filename, remove_zeros=True):
+    # Singular Value Decomposition
+    (r1, s, r2) = np.linalg.svd(C)
+
+    # compute sign (remove mirroring)
+    if np.linalg.det(C) < 0:
+        r2[2,:] *= -1.0
+    U = np.dot(r1, r2)
+    return (c_trans, U, ref_trans)
+
+def align_geo(ref_c, c, mask=None):
+    if mask is None:
+        mask=np.arange(len(ref_c))
+    c_trans, U, ref_trans = fit_rms(ref_c[mask], c[mask])
+    return np.dot(c - c_trans, U) + ref_trans
+
+def load_h5(filename, remove_zeros=True, align_geometries=True):
     hf = h5py.File(filename, 'r')
     d_CC = np.array(hf.get("d_CC"))
     E_init = np.array(hf.get("E_init"))
@@ -42,9 +65,19 @@ def load_h5(filename, remove_zeros=True):
     geometries = np.array(hf.get("geometries"))
     geometries_pending = np.array(hf.get("geometries_pending"))
     hf.close()
+    if align_geometries:
+        ###ignore hydrogens and halogen atoms to make it more robust
+        mask = np.arange(60)
+        ref_geo = geometries[-1,-1]
+        for i in range(len(geometries)):
+            for j in range(len(geometries[i])):
+                geometries[i,j] = align_geo(ref_geo, geometries[i,j],mask)
+        for i in range(len(geometries_pending)):
+            for j in range(len(geometries_pending[i])):
+                geometries_pending[i,j] = align_geo(ref_geo, geometries_pending[i,j],mask)
     if remove_zeros:
         mask = np.where(E_final!=0.)
-        print("The calculations for the CC-distances: %sA yielded no result" %str(d_CC[mask]))
+        print("The calculations for the CC-distances: %sA yielded a result" %str(d_CC[mask]))
         d_CC, E_init, E_final, geometries = d_CC[mask], E_init[mask], E_final[mask], geometries[mask]
     return d_CC, E_init, E_final, geometries, d_CC_pending, E_init_pending, E_final_pending, geometries_pending
 # %%
