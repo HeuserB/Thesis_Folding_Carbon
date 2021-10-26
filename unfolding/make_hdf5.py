@@ -130,13 +130,19 @@ def form_datasets(directory, title, output_directory = ""):
             state = 1
 
         E = read_energies(txt)
-        
         if len(E) < 2:
             print('Failed to load file %s' %file)
             continue
-            
         E_init, E_final = E[0], E[-1]
         geometries = read_geometries(txt)
+
+        print("Number of atoms found: %i" %len(geometries[0]))
+        if file != file_list[0]:
+            print(geometry_list[state][-1].shape[2])
+            if len(geometries[0]) != geometry_list[state][-1].shape[2]:
+                print('The file %s does not contain the same number of atoms as the previous files!' %file)
+                continue
+
         d_CC = np.linalg.norm(geometries[-1][34] - geometries[-1][36])
         geometries = np.vstack([geometries[0][NA,...], geometries[-1][NA,...]])
 
@@ -182,3 +188,4 @@ def form_datasets(directory, title, output_directory = ""):
     hdf_file.create_dataset("d_CC_pending", data=radii[state])
 
     hdf_file.close()
+    print('Data saved to file %s' %filename)
