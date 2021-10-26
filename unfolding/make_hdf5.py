@@ -172,20 +172,21 @@ def form_datasets(directory, title, output_directory = ""):
     hdf_file.create_dataset("geometries", data=geometry_list[state][0])
     hdf_file.create_dataset("d_CC", data=radii[state])
     
-    print("D_cc are:" , radii[state])
+    #print("D_cc are:" , radii[state])
         
     state = 1
     id_sort = np.argsort(radii[state])
-    radii[state] = radii[state][id_sort]
-    E_inits[state] = E_inits[state][id_sort]
-    E_finals[state] = E_finals[state][id_sort]
-    geometry_list[state][0] = geometry_list[state][0][1:,...]
-    geometry_list[state][0] = geometry_list[state][0][id_sort]
-        
-    hdf_file.create_dataset("E_init_pending", data=E_inits[state])
-    hdf_file.create_dataset("E_final_pending", data=E_finals[state])
-    hdf_file.create_dataset("geometries_pending", data=geometry_list[state][0])
-    hdf_file.create_dataset("d_CC_pending", data=radii[state])
+    if len(id_sort) > 1: ### only do this if there are pending files otherwise this will cause a problem
+        radii[state] = radii[state][id_so<rt]
+        E_inits[state] = E_inits[state][id_sort]
+        E_finals[state] = E_finals[state][id_sort]
+        geometry_list[state][0] = geometry_list[state][0][1:,...]
+        geometry_list[state][0] = geometry_list[state][0][id_sort]
+            
+        hdf_file.create_dataset("E_init_pending", data=E_inits[state])
+        hdf_file.create_dataset("E_final_pending", data=E_finals[state])
+        hdf_file.create_dataset("geometries_pending", data=geometry_list[state][0])
+        hdf_file.create_dataset("d_CC_pending", data=radii[state])
 
     hdf_file.close()
     print('Data saved to file %s' %filename)
