@@ -107,7 +107,7 @@ def read_geometries(txt, pattern_start=pattern_start, pattern_end=pattern_end):
 # In[7]:
 
 
-def form_datasets(directory, title, output_directory = "hdf5/"):
+def form_datasets(directory, title, output_directory = ""):
     file_list = list_files(directory)
     # create a list of all the dataset that need to be created, with functionals, halogen, initial angle and basis set
     geometry_list = []
