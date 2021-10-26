@@ -119,7 +119,7 @@ def form_datasets(directory, title, output_directory = ""):
     pattern = re.compile("Normal termination of Gaussian")
     
     for file in file_list:
-        print(file)
+        #print(file)
         f = open(file,'r')
         txt = f.read()
         f.close()
@@ -136,9 +136,8 @@ def form_datasets(directory, title, output_directory = ""):
         E_init, E_final = E[0], E[-1]
         geometries = read_geometries(txt)
 
-        print("Number of atoms found: %i" %len(geometries[0]))
+        #print("Number of atoms found: %i" %len(geometries[0]))
         if file != file_list[0]:
-            print(geometry_list[state][-1].shape[2])
             if len(geometries[0]) != geometry_list[state][-1].shape[2]:
                 print('The file %s does not contain the same number of atoms as the previous files!' %file)
                 continue
@@ -172,7 +171,8 @@ def form_datasets(directory, title, output_directory = ""):
     hdf_file.create_dataset("E_final", data=E_finals[state])
     hdf_file.create_dataset("geometries", data=geometry_list[state][0])
     hdf_file.create_dataset("d_CC", data=radii[state])
-        
+    
+    print("D_cc are:" , radii[state])
         
     state = 1
     id_sort = np.argsort(radii[state])
