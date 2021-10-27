@@ -19,7 +19,7 @@ class Unfolding(object):
         self.dual_unfolding = dual_unfolding
         self.graph_unfolding = graph_unfolding
         self.graph = graph
-        self.root_node = root_node
+        self.root_node = root_node  ### Index of the root face
         self.n_carbon = len(graph_unfolding)
         self.n_halogen = len(np.where(halogen_positions != 0)[0]) 
         self.graph_unfolding_array, self.periphery, self.hydrogen_positions, self.graph_periphery, self.periphery_type, self.parent_atom = make_graph_array(self.graph_unfolding, self.graph, halogen_positions, neighbours=3)
