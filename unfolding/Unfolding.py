@@ -30,7 +30,7 @@ class Unfolding(object):
         self.halogen_positions = halogen_positions
         self.halogen_parent_atom = np.where(self.halogen_positions!= 0)[0]
         self.hydrogen_parent_atom = np.where(self.hydrogen_positions!= 0)[0]
-        np.random.seed(12)
+        np.random.seed(12)  ### Define a random seed
 
         ### Dissociation energy and bond distacne matrix in the order H-F-Cl-C
         self.D_E = 4.184 * np.array([[436.002, 568.6, 431.8, 310.], [568.6, 156.9, 250.54, 485.] , [431.8, 250.54, 242.580, 351.], [310., 485., 351., 607.]])
@@ -71,13 +71,15 @@ class Unfolding(object):
         self.m = np.ones([len(self.vertex_coords)]) * 12.
         ### Set the masses of the halogens and hydrogens ###
         self.m[self.n_carbon:] = np.array([1.,18.99, 35.453])[self.periphery_type]
+
         self.v = np.zeros([len(self.m),3])
         self.a = np.zeros([len(self.m),3])
-        self.dt = 1e-8
+        self.dt = 1e-8  ### set the timestep for the integration
 
         ### Initiate the views for halogens and hydrogens ###
         ### They should never be redefined but only ### 
         ### treated with additions and substractions ###
+
         #self.halogens = self.vertex_coords[self.halogen_parent_atom]# + self.n_carbon]
         #self.hydrogens = self.vertex_coords[self.hydrogen_parent_atom]# + self.n_carbon]
         self.periphery_vertices = self.vertex_coords[self.n_carbon:]
@@ -94,8 +96,6 @@ class Unfolding(object):
         self.k = np.array([390., 450., 260. , 0, 0, 100, 100]) * (6.022 * 1e8)#  * (6.022 * 1e8) # given on Lukas Wirtz p. 126
         self.bonding_lengths_halogens = np.array([1.35,1.76])
 
-
-
         ### Define the indices needed for the coulomb repulsion ###
         self.inverse_graph = repulsion_matrix(self.graph)
         self.inverse_graph_periphery = repulsion_matrix_periphery(self.graph_periphery, self.n_carbon)
@@ -109,8 +109,7 @@ class Unfolding(object):
         #self.hydrogens += self.vertex_coords[self.hydrogen_parent_atom]
         self.periphery_vertices += self.vertex_coords[self.parent_atom]
 
-
-        ### Move the halogens and hydrogens by taing the average of the connecting vectors, their C father atom is bond to and flipping it by substracting it from their father atom ###
+        ### Move the halogens and hydrogens by taking the average of the connecting vectors, their C father atom is bond to and flipping it by substracting it from their father atom ###
         #tmp_1 = np.sum(self.vertex_coords[self.graph_unfolding_array[self.halogen_parent_atom]] - self.halogens[:,np.newaxis], axis=-2) / 2
         #tmp_2 = np.sum(self.vertex_coords[self.graph_unfolding_array[self.hydrogen_parent_atom]] - self.hydrogens[:,np.newaxis], axis=-2) / 2
         tmp_3 = np.sum(self.vertex_coords[self.graph_unfolding_array[self.parent_atom]] - self.periphery_vertices[:,np.newaxis], axis=-2) / 2
@@ -139,7 +138,8 @@ class Unfolding(object):
         self.num_of_steps = 20000
         self.angle_steps = np.linspace(np.pi, self.angles_f,self.num_of_steps + 1)
         self.step_size =  (np.pi - self.angles_f) / self.num_of_steps
-        self.stage = 0
+
+        self.stage = 0  ### Set the stage to zero
 
 
         ### Intialise the mesh for the GL application ###
