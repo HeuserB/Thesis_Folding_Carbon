@@ -40,6 +40,40 @@ def Eisenstein_to_Carth(x_eis,unit_dist = 1):
     x_cart = np.concatenate([np.array([np.real(tmp),np.imag(tmp)]).T, np.zeros_like(x_eis[:,0])[:,None]], axis=1)
     return (x_cart * unit_dist)
 
+
+def faces_from_hp(dual_graph, hexagons,pentagons):
+    Nf = len(dual_graph)
+    degrees = np.array([len(row) for row in dual_graph])
+    pent_ix = np.where(degrees==5)
+    hex_ix  = np.where(degrees==6)
+
+    faces = [[] for f in range(Nf)]
+    h_ix, p_ix = 0, 0
+    for f in range(Nf):
+        if pent_ix[f]:
+            faces[f] = pentagons[p_ix]
+            p_ix += 1
+        else:
+            faces[f] = hexagons[h_ix]
+            h_ix += 1
+
+    return faces
+
+def unfolding_subgraph(dual_graph, hexagon_arcpos, pentagon_arcpos):
+    Nf = len(dual_graph)
+    degrees = np.array([len(row) for row in dual_graph])
+    pent_ix = np.where(degrees==5)
+    hex_ix  = np.where(degrees==6)
+
+    # for each face (node in dual_graph), check whether all its arcs are internal
+    # Build boolean array for each node (in unfolding or not)
+    # Construct subgraph as each row in dual_graph but where nodes for unformed faces are removed
+    
+        
+
+# graph: dual graph subgraph of faces included in unfolding: dual nodes for faces not included have []-entries
+# root:  root face, node in dual graph
+# faces: atoms in faces (cubic graph node ids)
 def minimal_spanning_tree(graph,root,faces):
     # This function will return the faces between which we have hinges in a spanning tree manner
     
