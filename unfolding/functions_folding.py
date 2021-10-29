@@ -658,6 +658,31 @@ def plot_graph(unfolding, savefig=False,filename=None):
         fig.savefig(filename)
     return fig
 
+def plot_unfolding(dual_planar, faces, dual_subgraph, savefig=False, filename=None):
+
+    midpoints = np.zeros([len(faces),3],dtype=np.float64)
+    for face in range(len(faces)):
+            #midpoint = self.vertex_coords[self.graph_faces[face]].mean(axis=0)
+        midpoint = dual_planar[faces[face]].mean(axis=0)
+        midpoints[face] = midpoint
+
+    fig, ax = plt.subplots()
+    ax.scatter(dual_planar[:,0],dual_planar[:,1])
+
+    for face in dual_subgraph:
+        for u, v in zip(face, np.roll(face,-1)):
+            tmp = np.stack([dual_planar[u,:-1],dual_planar[v,:-1]]).T
+            ax.plot(tmp[0],tmp[1],'b-',lw=0.5)
+
+    for i, txt in enumerate(np.arange(dual_planar.shape[0])):
+        ax.annotate(txt,dual_planar[i][:2])
+        
+    ax.scatter(midpoints[:,0],midpoints[:,1])
+    ax.axis('equal');
+    if savefig == True:
+        fig.savefig(filename)
+    return fig
+
 def plot_graph_3D(graph):
     X = graph.vertex_coords
     #%matplotlib notebook
