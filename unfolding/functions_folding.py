@@ -5,6 +5,7 @@ from copy import deepcopy
 import re
 import h5py
 from matplotlib import cm
+import sys
 
 NA = np.newaxis
 
