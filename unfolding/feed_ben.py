@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 import numpy as np
 from functions_folding import *
-import data
+import data.C120D6_fat as data
 
 bond_angles  = np.array([108.,120.])*np.pi/180
 bond_lengths = np.array([1.458,1.401])
 
-f = np.load("all_completed.npz")
+f = np.load("C120D6_fat-output.npz")
 
 arcpos      = f['Arcpos'][0]
 pentagon_ix = f['Pentagon_ix'][0]
