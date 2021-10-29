@@ -40,6 +40,88 @@ def Eisenstein_to_Carth(x_eis,unit_dist = 1):
     x_cart = np.concatenate([np.array([np.real(tmp),np.imag(tmp)]).T, np.zeros_like(x_eis[:,0])[:,None]], axis=1)
     return (x_cart * unit_dist)
 
+
+def faces_from_hp(dual_graph, hexagons,pentagons):
+    Nf = len(dual_graph)
+    degrees = np.array([len(row) for row in dual_graph])
+    pent_ix = degrees==5
+    hex_ix  = degrees==6
+
+    
+    faces = [[] for f in range(Nf)]
+    h_ix, p_ix = 0, 0
+    for f in range(Nf):
+        if pent_ix[f]:
+            faces[f] = list(pentagons[p_ix])
+            p_ix += 1
+        else:
+            faces[f] = list(hexagons[h_ix])
+            h_ix += 1
+
+    return faces
+
+
+def internal_faces(dual_graph, arcpos):
+    Nf = len(dual_graph)
+
+    internal_arc       = np.zeros((Nf,6),bool)
+    
+    for u in range(Nf):
+        for j in range(len(dual_graph[u])):
+            xu,xv = arcpos[u][j]    # u->v
+            v = dual_graph[u][j]
+
+            rj = dual_graph[v].index(u)
+            rxv, rxu = arcpos[v][rj] # v->u
+
+            internal_arc[u,j] = ((xv == rxv) & (xu == rxu)).all()
+
+    number_internal_arcs = np.sum(internal_arc.astype(int),axis=1)
+
+    return number_internal_arcs
+
+def unfolding_faces(dual_graph,arcpos,pent_ix, number_internal_arcs):
+
+    unfolding_face = (number_internal_arcs==6) # Hexagons that have all arcs internal are in the unfolding
+    
+    # Which pentagons are included in the unfolding? Only the ones that have exactly one edge split and
+    # a maximum of two adjacent neighbour faces included in the unfolding. 
+    for p in pent_ix:
+        too_many_adjacent_neighours = False
+        for j in range(5):
+            neighbours = dual_graph[p]
+            s,t,r = neighbours[j], neighbours[(j+1)%5], neighbours[(j+2)%5]
+
+            too_many_adjacent_neighours |= (unfolding_face[s] & unfolding_face[t] & unfolding_face[r])
+
+        unfolding_face[p] = (number_internal_arcs[p]==4) & ~too_many_adjacent_neighours
+#        print(f"pentagon {p} -> unfolding_face: {unfolding_face[p]}")
+
+    return unfolding_face
+
+def arcpos_to_unfolding(dual_graph,arcpos):
+    Nf = len(dual_graph)
+    degrees = np.array([len(row) for row in dual_graph])
+    pent_ix = np.argwhere(degrees==5).flatten()
+    hex_ix  = np.argwhere(degrees==6).flatten()
+
+    number_internal_arcs = internal_faces(dual_graph,arcpos)
+    unfolding_face       = unfolding_faces(dual_graph,arcpos,pent_ix,number_internal_arcs)
+
+    uf_faces    = {f[0]: dual_graph[f[0]] for f in np.argwhere(unfolding_face)}
+    not_present = np.argwhere(~unfolding_face)
+    
+    dual_subgraph = [[] for _ in range(Nf)]
+    for u in range(Nf):
+        if(unfolding_face[u]):
+            dual_subgraph[u] = [v for v in dual_graph[u] if unfolding_face[v] ]
+
+    return dual_subgraph
+
+
+# graph: dual graph subgraph of faces included in unfolding: dual nodes for faces not included have []-entries
+# root:  root face, node in dual graph
+# faces: atoms in faces (cubic graph node ids)
 def minimal_spanning_tree(graph,root,faces):
     ### graph:  list[list[int]]; list of list of the graph, which face is neighobour of which face 
     ### root:   int; index of the root face to create MST
@@ -60,17 +142,16 @@ def minimal_spanning_tree(graph,root,faces):
     while queue:
             # Take a vertex from the queque
             s = queue.pop(0)
-            
             # Get all adjacent vertices of the 
             # dequeued vertex s. If a adjacent 
             # has not been visited, then mark it 
             # visited and queue it 
-            for i in graph[s]:
-                if visited[i] == False:
-                    tree[s].append(i)
-                    queue.append(i)
-                    visited[i] = True
-                    hinges.append([s,i])
+            for v in graph[s]:
+                if visited[v] == False:
+                    tree[s].append(v)
+                    queue.append(v)
+                    visited[v] = True
+                    hinges.append([s,v])
                     connected_hinges[s].append(hinge)
                     hinge += 1
 
