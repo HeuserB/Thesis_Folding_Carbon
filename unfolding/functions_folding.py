@@ -41,6 +41,9 @@ def Eisenstein_to_Carth(x_eis,unit_dist = 1):
     return (x_cart * unit_dist)
 
 def minimal_spanning_tree(graph,root,faces):
+    ### graph:  list[list[int]]; list of list of the graph, which face is neighobour of which face 
+    ### root:   int; index of the root face to create MST
+    ### faces:  list[list[int]]; list of list, which atom indices make up which face 
     # This function will return the faces between which we have hinges in a spanning tree manner
     
     if root >= len(graph): 
@@ -114,7 +117,7 @@ def spanning_tree(graph_orig, root, faces, duplicates = False):
     queue = []
     hinges = []
     queue.append(root)
-    tree = [ [] for i in range(len(graph)) ]
+    tree = [ [] for i in range( len(graph)) ]
     connected_hinges = [ [] for i in range(len(graph)) ]
     hinge = 0 
     while queue:
