@@ -25,10 +25,10 @@ tree, affected_vs, hinges, connected_hinges = hinges_traversed(unfolding_subgrap
 gg = {u:unfolding_subgraph[u] for u in range(62)}
 tt = {u:tree[u] for u in range(62) if tree[u] != []}
 #print(f"subgraph: {gg}")
-print(f"tree: {tt}\n\n")
-print(f"hinges[0]: {hinges[0]}\n\n"
-      f"hinges[1]: {hinges[1]}")
-
+#print(f"tree: {tt}\n\n")
+#print(f"hinges[0]: {hinges[0]}\n\n"
+#      f"hinges[1]: {hinges[1]}\n")
+print(f'face 9 contains atoms {faces[0]} : face 20 contains atoms {faces[20]}\n')
 #planar_geometry = draw_vertices_unfolding(unfolding_subgraph,faces,root_node,bond_angles,bond_lengths)
 
 

@@ -7,6 +7,8 @@ import h5py
 from matplotlib import cm
 import sys
 
+from numpy.lib.shape_base import get_array_wrap
+
 NA = np.newaxis
 
 #bonding_lengths = np.array([1.458,1.401]) 
@@ -42,7 +44,7 @@ def Eisenstein_to_Carth(x_eis,unit_dist = 1):
     return (x_cart * unit_dist)
 
 
-def faces_from_hp(dual_graph, hexagons,pentagons):
+def faces_from_hp(dual_graph, hexagons, pentagons):
     Nf = len(dual_graph)
     degrees = np.array([len(row) for row in dual_graph])
     pent_ix = degrees==5
@@ -59,12 +61,21 @@ def faces_from_hp(dual_graph, hexagons,pentagons):
             faces[f] = list(hexagons[h_ix])
             h_ix += 1
 
+    pents = [faces[i] for i in range(len(pent_ix)) if pent_ix[i]]
+    hexs = [faces[i] for i in range(len(hex_ix)) if hex_ix[i]]
+
+    gg = {u: dual_graph[u] for u in range(Nf)}
+    print(f'Dual_graph is: {gg}\n')
+    #print(f'Pentagon indices are: {np.argwhere(pent_ix).flatten()}')
+    #print(f'Hexagon indices are:{np.argwhere(hex_ix).flatten()}')
+    #print(f'\nPentagons are: {pents}\n')
+    #print(f'\nHexagons are: {hexs}\n')
     return faces
 
 
 def internal_faces(dual_graph, arcpos):
     Nf = len(dual_graph)
-
+    
     internal_arc       = np.zeros((Nf,6),bool)
     
     for u in range(Nf):
@@ -461,21 +472,33 @@ def draw_face(dual_planar, hinges, face, mother_hinge,bond_angles, bonding_lengt
     start = False
 
     tmp_face = face.copy()
-    for i in tmp_face:
-        if i == hinge_vertices[0]:
-            start = True
-            continue
+    
+    #print(f'face at the beginning of loop {face}')
 
-        if start == False:
-            tmp_face.append(i)
-            continue
+    # look where the beginning of the hinge is located in the face 
+    # use the beginning because the hinge and the child face are oriented differetly
+    hinge_id = face.index(hinge_vertices[0])
 
-        else:
-            if i == hinge_vertices[1]:
-                break
-            else:
-                missing_vertices.append(i)
+    # roll the face by the id
+    missing_vertices = np.roll(face,- hinge_id - 1)[:-2]
+    #print(f'The hinge is {hinge_vertices}')
+    #print(f'The end of the hinge is at position {hinge_id} in the face')
 
+    #for i in tmp_face:
+    #    if i == hinge_vertices[0]:
+    #        start = True
+    #        continue
+
+    #    if start == False:
+    #        tmp_face.append(i)
+    #        continue
+
+    #    else:
+    #        if i == hinge_vertices[1]:
+    #            break
+    #        else:
+    #            missing_vertices.append(i)
+    #print(f'Missing vertices are: {missing_vertices}')
 
     # successively create the new vertex points of the face starting with the hinge vector
     # theta is the angle between the old vectors, namley the pentagon or heaxon angles
@@ -676,7 +699,7 @@ def plot_unfolding(dual_planar, faces, dual_subgraph, savefig=False, filename=No
 
     for i, txt in enumerate(np.arange(dual_planar.shape[0])):
         ax.annotate(txt,dual_planar[i][:2])
-        
+
     ax.scatter(midpoints[:,0],midpoints[:,1])
     ax.axis('equal');
     if savefig == True:
