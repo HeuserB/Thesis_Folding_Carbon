@@ -64,8 +64,8 @@ def faces_from_hp(dual_graph, hexagons, pentagons):
     pents = [faces[i] for i in range(len(pent_ix)) if pent_ix[i]]
     hexs = [faces[i] for i in range(len(hex_ix)) if hex_ix[i]]
 
-    gg = {u: dual_graph[u] for u in range(Nf)}
-    print(f'Dual_graph is: {gg}\n')
+    #gg = {u: dual_graph[u] for u in range(Nf)}
+    #print(f'Dual_graph is: {gg}\n')
     #print(f'Pentagon indices are: {np.argwhere(pent_ix).flatten()}')
     #print(f'Hexagon indices are:{np.argwhere(hex_ix).flatten()}')
     #print(f'\nPentagons are: {pents}\n')
@@ -450,84 +450,55 @@ def unique_vertices(faces):
             vertices = np.append(vertices,vertex)
     return np.unique(vertices)
    
-def draw_face(dual_planar, hinges, face, mother_hinge,bond_angles, bonding_lengths):    
+def draw_face(dual_planar, hinges, face, h,bond_angles, bonding_lengths):    
     '''
     This function draws a face either hexagon or pentagon on the two dimensional plane from a given mother hinge by rotating around it 
-    ''' 
-    hinge_vertices = hinges[1][mother_hinge]
-
-    vertex_0 = dual_planar[hinge_vertices[0]]
-    vertex_1 = dual_planar[hinge_vertices[1]]
-
-    r = vertex_0 - vertex_1
-
-    # is it a pentagon or hexagon?
-    if len(face) == 5:
-        index = 0
-    elif len(face) == 6:
-        index = 1
-
-    # create a list of all missing vertices of the face in clockwise order
-    missing_vertices = []
-    start = False
-
-    tmp_face = face.copy()
+    '''
+    u,v = hinges[0][h]          # hinges[0] = dual_hinges
+    a,b = hinges[1][h]          # hinges[1] = cubic_hinges
     
-    #print(f'face at the beginning of loop {face}')
+    xa, xb = dual_planar[a], dual_planar[b]
+    r      = xa-xb
+    
+    print(f"Drawing face {v}: {face} connected by hinge {h}: {a,b}/{u,v}")
+    
+    shape_index = len(face)-5
 
     # look where the beginning of the hinge is located in the face 
     # use the beginning because the hinge and the child face are oriented differetly
-    hinge_id = face.index(hinge_vertices[0])
+    try:
+        hinge_offset = face.index(a)
+    except:
+        print(f"Error: hinge vertices {hinge_vertices} are not part of face {face}")
+        sys.exit()
 
     # roll the face by the id
-    missing_vertices = np.roll(face,- hinge_id - 1)[:-2]
-    #print(f'The hinge is {hinge_vertices}')
-    #print(f'The end of the hinge is at position {hinge_id} in the face')
-
-    #for i in tmp_face:
-    #    if i == hinge_vertices[0]:
-    #        start = True
-    #        continue
-
-    #    if start == False:
-    #        tmp_face.append(i)
-    #        continue
-
-    #    else:
-    #        if i == hinge_vertices[1]:
-    #            break
-    #        else:
-    #            missing_vertices.append(i)
-    #print(f'Missing vertices are: {missing_vertices}')
-
+    missing_atoms = np.roll(face,-hinge_offset-1)[:-2]
+    print(f"missing_atoms = {missing_atoms}")
+    
     # successively create the new vertex points of the face starting with the hinge vector
     # theta is the angle between the old vectors, namley the pentagon or heaxon angles
-    theta =  np.pi - bond_angles[index]
-
-    #print(np.degrees(theta))
-
-    length = bonding_lengths[index]
+    theta =  np.pi - bond_angles[shape_index]
+    length = bonding_lengths[shape_index]
 
     r = (r / np.linalg.norm(r)) * length
 
-    # define the rotational matrix
-    #print(r)
-
-    for vertex in missing_vertices:
+    for c in missing_atoms:
         # rotate the vector connecting the two previous two hinges around the bonding angle
         r = rotate_vector(r,theta)
   
         # and add the rotated vector on the last vertex
-        dual_planar[vertex] = vertex_0 + r
+        xc = xa + r
+        dual_planar[c] = xc
 
-        vertex_1 = np.copy(vertex_0)
-        vertex_0 = dual_planar[vertex]
-        r = vertex_0 - vertex_1
+        xb = xa
+        xa = xc
+        r = xa - xb
 
     return dual_planar
 
 def draw_root_face(dual_planar,faces,root_node, bond_angles, bonding_lengths):
-
+    
     face = faces[root_node]
     if len(face) == 5:
         index = 0
@@ -542,7 +513,6 @@ def draw_root_face(dual_planar,faces,root_node, bond_angles, bonding_lengths):
     dual_planar[face[0]][1] = (length * 0.5) / np.tan(theta_0)
 
     r  = dual_planar[face[0]] / np.linalg.norm(dual_planar[face[0]]) *  bonding_lengths[index]
-
 
     theta = bond_angles[index]
 
@@ -560,19 +530,25 @@ def draw_root_face(dual_planar,faces,root_node, bond_angles, bonding_lengths):
 
     return dual_planar
 
+
 def draw_vertices_unfolding(dual_graph, faces, root_node, bond_angles, bonding_lengths):
     num_of_vertices = len(unique_vertices(faces))
     
     dual_planar = np.zeros([num_of_vertices,2],dtype=np.float64)
     dual_planar = draw_root_face(dual_planar, faces, root_node, bond_angles, bonding_lengths)
+
+    print(f"root_node = {root_node}, root_face = {faces[root_node]}")
     
     tree, affected_children_tree, hinges, connected_hinges = hinges_traversed(dual_graph, faces, root_node)
 
-    index = 0
-    for i in tree:
-        for face in i:
-            dual_planar = draw_face(dual_planar, hinges, faces[face], index, bond_angles, bonding_lengths)
-            index += 1
+    dual_hinges, cubic_hinges = hinges    
+
+    print(f"dual hinges:  {hinges[0]}\n"
+          f"cubic hinges: {hinges[1]}\n")
+
+    for h in range(len(dual_hinges)):
+        u,v = dual_hinges[h]
+        dual_planar = draw_face(dual_planar, hinges, faces[v], h, bond_angles, bonding_lengths)
 
     dual_planar = np.concatenate([dual_planar,np.zeros([dual_planar.shape[0],1])],axis=1)
     return dual_planar
