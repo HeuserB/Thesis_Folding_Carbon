@@ -806,18 +806,17 @@ def write_gaussfile(unfolding, header, double_hydrogens=np.array([],dtype=np.int
 
         header= deepcopy(header)
         text += header
-        
+
         # write the C coordinates
-        for idC, i in enumerate(unfolding.vertex_coords[:unfolding.n_carbon]):
+        for idC, coords in enumerate(unfolding.vertex_coords[:unfolding.n_carbon]):
             text += " C "
             if freeze ==  True:
                 if idC in freezelist:
                     text += "-1 "
-            text += xyz_to_string(i)
-            #for j in i:
-            #    text += " "
-            #    text += str(np.round(j,9))
-            #text += "\n"
+                text += xyz_to_string(coords)
+            else:
+                # add some noise to avoid singular angles
+                text += xyz_to_string(coords + np.random.normal(loc=0.,scale=1e-3,size=3)) 
 
         # give each C that only has two neighbours an H
         hydrogen_list = [None] * len(unfolding.graph_unfolding)
@@ -843,13 +842,8 @@ def write_gaussfile(unfolding, header, double_hydrogens=np.array([],dtype=np.int
                     vec_1 = unfolding.vertex_coords[i] + vec_1
                     vec = unfolding.vertex_coords[i] + vec_2
                     text += " H "
-                    #if freeze ==True:
-                    #    text += "-1 "
-                    text += xyz_to_string(vec_1)
-                    #for j in vec_1:
-                    #    text += " "
-                    #    text += str(np.round(j,9))
-                    #text += "\n"
+                    # add some noise to avoid singular angles
+                    text += xyz_to_string(vec_1+ np.random.normal(loc=0.,scale=1e-3,size=3))
                     text += " H "
 
                 elif (i in unfolding.halogen_parent_atom):
@@ -882,14 +876,7 @@ def write_gaussfile(unfolding, header, double_hydrogens=np.array([],dtype=np.int
                             vec = np.dot(mat,vec.T).T
                     vec = unfolding.vertex_coords[i] + vec
                     text += " H "
-                #if freeze ==True:
-                    #if i in freezelist:
-                    #    text += "-1 "
-                text += xyz_to_string(vec)
-                #for j in vec:
-                #    text += " "
-                #    text += str(np.round(j,9))
-                #text += "\n"
+                text += xyz_to_string(vec + np.random.normal(loc=0.,scale=1e-3,size=3))
         text += "\n"
 
         # and the connectivity table
