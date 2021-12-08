@@ -3,3 +3,4 @@
 # this directory and all its sub-directories.
 *.pyc
 *.ipynb_checkpoints/
+/input/inputs/
