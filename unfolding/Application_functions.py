@@ -39,21 +39,35 @@ def read_unfolding(filename):
     hf.close()
     return dual_unfolding, graph_unfolding, graph_unfolding_faces, vertices_final, bonds_toBe, lengths_toBe, angles_f, opt_geom, halogene_positions, neighbours, graph_faces
 
-def read_geometry(file):
+def read_geometry(file,mode='Output'):
     f = open(file, "r")
     txt = f.read()
     f.close()
     pattern = re.compile("Normal termination of Gaussian")
     if bool(re.search(pattern,txt)) == False:
-        return None
-    tmp = re.split("0,1\\\\",txt)[-1]
-    tmp = re.split("\\\\\\\\Version",tmp)[0]
+        if mode=="Output":
+            print(f"Gaussian output file {file} did not terminate normally!")
+            return None
+    
+    if mode=="Output":
+        tmp = re.split("0,1\\\\",txt)[-1]
+        tmp = re.split("\\\\\\\\Version",tmp)[0]
+    elif mode=="Input":
+        tmp = re.split("0\s+1\s+",txt)[-1]
+    else:
+        print("Choose on of the two modes for geometry containing files: [\"Output\",\"Input\"]")
+        return
     tmp = re.sub('[A-Z]', '', tmp)
-    tmp = re.sub("\s","",tmp)
     tmp = re.sub('[a-z]', '', tmp)
+    if mode=="Output":
+        tmp = re.sub("\s","",tmp)
+    if mode=="Input":
+        tmp = re.sub("\s+",",",tmp)
+
     tmp = tmp[1:]
     tmp = re.sub("\\\\",'',tmp)
-    tmp = np.fromstring(tmp,sep=',').reshape(-1,3)
+    tmp = np.fromstring(tmp,sep=',')
+    tmp = tmp.reshape(-1,3)
     return tmp
 
 def fit_plane(points):

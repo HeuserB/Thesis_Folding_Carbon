@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.lib.shape_base import get_array_wrap
 NA = np.newaxis 
 
 def vote_on_normal(normals):
@@ -49,3 +50,21 @@ def mean_normal(vertices, faces):
     mean_normal = 1/faces.shape[-1] * np.sum(normals * vote_on_normal(normals)[...,NA], axis = -2) 
 
     return mean_normal
+
+def detect_minimal_distance(geometry,min_length,title):
+    n_atoms = geometry.shape[0]
+    distances = np.zeros([n_atoms,n_atoms])
+    for atom_a in range(n_atoms):
+        distances[atom_a,atom_a] = 1e10
+        for atom_b in range(atom_a):
+            length = np.sqrt(np.sum((geometry[atom_a] - geometry[atom_b])**2))
+            distances[atom_a,atom_b] = length
+            distances[atom_b,atom_a] = length
+    min_atom_a, min_atom_b = np.where(distances < min_length)
+    min_atom_a, min_atom_b = min_atom_a[:len(min_atom_a)//2], min_atom_b[:len(min_atom_b)//2]
+    txt=''
+    if len(min_atom_a) !=0:
+        for min_dist_ID in range(len(min_atom_a)):
+            txt+=(f"Minimal distance in file {title}: r={distances[min_atom_a[min_dist_ID],min_atom_b[min_dist_ID]]} encountered between Atoms {min_atom_a[min_dist_ID]} and {min_atom_b[min_dist_ID]}!\n")
+            print(f"Minimal distance in file {title} r={distances[min_atom_a[min_dist_ID],min_atom_b[min_dist_ID]]} encountered between Atoms {min_atom_a[min_dist_ID]} and {min_atom_b[min_dist_ID]}!\n")
+    return txt
