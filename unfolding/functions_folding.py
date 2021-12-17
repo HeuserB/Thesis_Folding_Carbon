@@ -427,6 +427,7 @@ def update_transform(coordinates_3D, hinge_0, hinges, affected_children, delta_p
     #rotate and update the 3D coordinates
     new_vertices =  np.dot(rot_matrix,reference_vertices.T).T
     coordinates_3D[affected] = origin + new_vertices
+    print(coordinates_3D)
     
     #print(new_reference_vertices)
 
@@ -460,7 +461,7 @@ def draw_face(dual_planar, hinges, face, h,bond_angles, bonding_lengths):
     xa, xb = dual_planar[a], dual_planar[b]
     r      = xa-xb
     
-    print(f"Drawing face {v}: {face} connected by hinge {h}: {a,b}/{u,v}")
+    #print(f"Drawing face {v}: {face} connected by hinge {h}: {a,b}/{u,v}")
     
     shape_index = len(face)-5
 
@@ -474,7 +475,7 @@ def draw_face(dual_planar, hinges, face, h,bond_angles, bonding_lengths):
 
     # roll the face by the id
     missing_atoms = np.roll(face,-hinge_offset-1)[:-2]
-    print(f"missing_atoms = {missing_atoms}")
+    #print(f"missing_atoms = {missing_atoms}")
     
     # successively create the new vertex points of the face starting with the hinge vector
     # theta is the angle between the old vectors, namley the pentagon or heaxon angles
@@ -648,7 +649,7 @@ def plot_graph(unfolding, savefig=False,filename=None):
     for i in range(len(unfolding.graph_unfolding)):
         for j in unfolding.graph_unfolding[i]:
             tmp = np.stack([unfolding.vertex_coords[i,:-1],unfolding.vertex_coords[j,:-1]]).T
-            ax.plot(tmp[0],tmp[1],'b-',lw=0.5)
+            ax.plot(tmp[0],tmp[1],tmp[2],'b-',lw=0.5)
     for i, txt in enumerate(np.arange(dual_planar.shape[0])):
         ax.annotate(txt,dual_planar[i][:2])
     ax.scatter(midpoints[:,0],midpoints[:,1])
@@ -659,25 +660,31 @@ def plot_graph(unfolding, savefig=False,filename=None):
 
 def plot_unfolding(dual_planar, faces, dual_subgraph, savefig=False, filename=None):
 
-    midpoints = np.zeros([len(faces),3],dtype=np.float64)
-    for face in range(len(faces)):
+    midpoints = np.zeros([len(dual_subgraph),3],dtype=np.float64)
+    for faceid, face in enumerate(dual_subgraph):
             #midpoint = self.vertex_coords[self.graph_faces[face]].mean(axis=0)
-        midpoint = dual_planar[faces[face]].mean(axis=0)
-        midpoints[face] = midpoint
+        midpoint = np.mean(dual_planar[face],axis=0)
+        midpoints[faceid] = midpoint
 
     fig, ax = plt.subplots()
-    ax.scatter(dual_planar[:,0],dual_planar[:,1])
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(dual_planar[:,0],dual_planar[:,1],dual_planar[:,2])
 
     for face in dual_subgraph:
         for u, v in zip(face, np.roll(face,-1)):
-            tmp = np.stack([dual_planar[u,:-1],dual_planar[v,:-1]]).T
-            ax.plot(tmp[0],tmp[1],'b-',lw=0.5)
+            tmp = np.stack([dual_planar[u],dual_planar[v]]).T
+            ax.plot(tmp[0],tmp[1],tmp[2],'b-',lw=0.5)
 
     for i, txt in enumerate(np.arange(dual_planar.shape[0])):
-        ax.annotate(txt,dual_planar[i][:2])
+        #ax.annotate(txt,dual_planar[i][:2])
+        ax.text(*dual_planar[i], txt)
 
-    ax.scatter(midpoints[:,0],midpoints[:,1])
-    ax.axis('equal');
+    for i, txt in enumerate(np.arange(midpoints.shape[0])):
+        #ax.annotate(txt,midpoints[i][:2],color='r')
+        ax.text(*midpoints[i], txt,color='r')
+
+    ax.scatter(midpoints[:,0],midpoints[:,1],midpoints[:,2])
+    #ax.axis('equal');
     if savefig == True:
         fig.savefig(filename)
     return fig

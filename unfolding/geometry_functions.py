@@ -6,12 +6,15 @@ def vote_on_normal(normals):
     # Given a set of normal vectors 
     # find the mean direction and multiply 
     # each normal vector with the 
-    # sing to make them point in the same 
+    # sign to make them point in the same 
     # direction
 
     # find a non-zero normal vector
     non_zero = np.argmax((normals**2).sum(axis=-1), axis=-1)
-        
+    #print(f"Non zero normal vector is {normals[non_zero]} and has index: {non_zero}\n")
+
+    #print(normals[np.arange(len(normals)),non_zero][:,np.newaxis,:])
+
     # pick the corresponding vectors to the 
     # indices and repeat them for each vertex 
     # in the face
@@ -46,6 +49,7 @@ def mean_normal(vertices, faces):
 
     normals = np.cross(vec_left, vec_right)
     normals = normals / np.linalg.norm(normals, axis = -1)[...,NA]
+    #print(f"Shape of normal vectors is {normals.shape}")
 
     mean_normal = 1/faces.shape[-1] * np.sum(normals * vote_on_normal(normals)[...,NA], axis = -2) 
 

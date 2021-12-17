@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import numpy as np
+from numpy.lib.function_base import angle
 from functions_folding import *
 from geometry_functions import *
 import data.C120D6_fat as data
@@ -14,6 +15,8 @@ pentagon_ix = f['Pentagon_ix'][0]
 path        = f['Paths'][0]
 
 root_node = path[0,0,0]
+print(root_node)
+root_node = 9
 
 unfolding_subgraph = arcpos_to_unfolding(data.dual_neighbours,arcpos)
 
@@ -39,9 +42,48 @@ planar_geometry = draw_vertices_unfolding(unfolding_subgraph,faces,root_node,bon
 
 unfolding_normals = np.zeros((Nf,3),dtype=float)
 
-# for u in range(Nf):
-#     if (len(unfolding_subgraph[u])>0):
-#         unfolding_normals[u] = mean_normal(planar_geometry, np.array(faces[u]))
+pent_id, hex_id = face_type(faces)
 
-# print(f"unfolding_normals = {unfolding_normals}")
+hexagons, pentagons = [], []
+for face in faces:
+    if len(face) == 5:
+        pentagons.append(face)
+    elif len(face) == 6:
+        hexagons.append(face)
+hexagons, pentagons = np.array(hexagons), np.array(pentagons)
 
+unfolding_normals[pent_id] = mean_normal(planar_geometry, pentagons)
+unfolding_normals[hex_id] = mean_normal(planar_geometry, hexagons)
+
+unfolding_faceids = [u for u in range(Nf) if unfolding_subgraph[u] != [] ] 
+unfolding_faces = [faces[u] for u in unfolding_faceids]
+
+fig = plot_unfolding(planar_geometry,faces,unfolding_faces)
+plt.show()
+
+X = data.points_opt
+closed_normals = np.zeros((Nf,3),dtype=float)
+closed_normals[pent_id] = mean_normal(X, pentagons)
+closed_normals[hex_id] = mean_normal(X, hexagons)
+angles_final = [angle_vec(closed_normals[u],closed_normals[v],degrees=False) for u,v in hinges[0]]
+
+#for hinge in range(len(hinges[0])):
+for hinge in [0]:
+    update_transform(planar_geometry, hinge, hinges, affected_vs, angles_final[hinge])
+
+fig = plot_unfolding(planar_geometry,faces,unfolding_faces)
+plt.show()
+
+print(angles_final)
+
+# For the folding up to work we will need:
+# 
+# dual_unfolding, = planar_geometry
+# graph_unfolding_faces, = unfolding_subgraph
+# graph_faces, = faces
+# graph_unfolding, = !!! Subgraph of the unfolding 
+# graph, = dual_neighbours
+# halogen_positions=halogen_positions, 
+# root_node=0, 
+# bonds_toBe=bonds_toBe, 
+# angles_f=angles_f
