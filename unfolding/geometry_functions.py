@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.lib.shape_base import get_array_wrap
+from functions_folding import angle_vec
 NA = np.newaxis 
 
 def vote_on_normal(normals):
@@ -72,3 +73,18 @@ def detect_minimal_distance(geometry,min_length,title):
             txt+=(f"Minimal distance in file {title}: r={distances[min_atom_a[min_dist_ID],min_atom_b[min_dist_ID]]} encountered between Atoms {min_atom_a[min_dist_ID]} and {min_atom_b[min_dist_ID]}!\n")
             print(f"Minimal distance in file {title} r={distances[min_atom_a[min_dist_ID],min_atom_b[min_dist_ID]]} encountered between Atoms {min_atom_a[min_dist_ID]} and {min_atom_b[min_dist_ID]}!\n")
     return txt
+
+def calculate_final_angles(closed_vertices, graph_unfolding_faces, hinges):
+    final_midpoints = np.zeros([len(graph_unfolding_faces),3])
+
+    for faceId, face in enumerate(graph_unfolding_faces):
+        final_midpoints[faceId] = np.mean(closed_vertices[face],axis=-2)
+
+    hinge_midpoints = np.sum(closed_vertices[[tuple(hinges[1])]],axis=-2) / 2.
+
+    # calculate the vectors from the hinge midpoint to the face midpoint of the two faces which form the hinge
+    hinge_legs = final_midpoints[[tuple(hinges[0])]] - np.repeat(hinge_midpoints[:,np.newaxis,:],2,axis=-2)
+
+    # calculate the angles between those two leg-vectors
+    angles = angle_vec(hinge_legs[:,0,:],hinge_legs[:,1,:],degrees=False)
+    return angles

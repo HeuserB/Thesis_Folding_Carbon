@@ -177,7 +177,7 @@ def form_datasets(directory, title, output_directory = ""):
     state = 1
     id_sort = np.argsort(radii[state])
     if len(id_sort) > 1: ### only do this if there are pending files otherwise this will cause a problem
-        radii[state] = radii[state][id_so<rt]
+        radii[state] = radii[state][id_sort]
         E_inits[state] = E_inits[state][id_sort]
         E_finals[state] = E_finals[state][id_sort]
         geometry_list[state][0] = geometry_list[state][0][1:,...]

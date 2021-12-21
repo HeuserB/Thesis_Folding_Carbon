@@ -67,13 +67,16 @@ closed_normals[pent_id] = mean_normal(X, pentagons)
 closed_normals[hex_id] = mean_normal(X, hexagons)
 angles_final = [angle_vec(closed_normals[u],closed_normals[v],degrees=False) for u,v in hinges[0]]
 
+angles_final = calculate_final_angles(X, unfolding_subgraph, hinges)
+
 #for hinge in range(len(hinges[0])):
-for hinge in [0]:
+for hinge in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]:
     update_transform(planar_geometry, hinge, hinges, affected_vs, angles_final[hinge])
 
 fig = plot_unfolding(planar_geometry,faces,unfolding_faces)
 plt.show()
 
+#angles_final = calculate_final_angles(closed_vertices, graph_unfolding_faces, hinges)
 print(angles_final)
 
 # For the folding up to work we will need:

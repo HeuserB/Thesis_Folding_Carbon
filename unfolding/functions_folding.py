@@ -659,21 +659,25 @@ def plot_graph(unfolding, savefig=False,filename=None):
     return fig
 
 def plot_unfolding(dual_planar, faces, dual_subgraph, savefig=False, filename=None):
+    fig, ax = plt.subplots()
+    ax = fig.add_subplot(111, projection='3d')
 
     midpoints = np.zeros([len(dual_subgraph),3],dtype=np.float64)
     for faceid, face in enumerate(dual_subgraph):
-            #midpoint = self.vertex_coords[self.graph_faces[face]].mean(axis=0)
+        print(f'Drawing face {faceid} with vertices{face}')
+        #midpoint = self.vertex_coords[self.graph_faces[face]].mean(axis=0)
         midpoint = np.mean(dual_planar[face],axis=0)
         midpoints[faceid] = midpoint
-
-    fig, ax = plt.subplots()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(dual_planar[:,0],dual_planar[:,1],dual_planar[:,2])
-
-    for face in dual_subgraph:
         for u, v in zip(face, np.roll(face,-1)):
             tmp = np.stack([dual_planar[u],dual_planar[v]]).T
             ax.plot(tmp[0],tmp[1],tmp[2],'b-',lw=0.5)
+
+    ax.scatter(dual_planar[:,0],dual_planar[:,1],dual_planar[:,2])
+
+    #for face in dual_subgraph:
+    #    for u, v in zip(face, np.roll(face,-1)):
+    #       tmp = np.stack([dual_planar[u],dual_planar[v]]).T
+    #        ax.plot(tmp[0],tmp[1],tmp[2],'b-',lw=0.5)
 
     for i, txt in enumerate(np.arange(dual_planar.shape[0])):
         #ax.annotate(txt,dual_planar[i][:2])
