@@ -1,42 +1,54 @@
 #!/usr/bin/python3
-import numpy as np
+import sys, numpy as np
 from numpy.lib.function_base import angle
 from functions_folding import *
 from geometry_functions import *
-import data.C120D6_fat as data
 
 bond_angles  = np.array([108.,120.])*np.pi/180
 bond_lengths = np.array([1.458,1.401])
 
-f = np.load("C120D6_fat-output.npz")
+if(len(sys.argv)<2):
+    print(f"Syntax: {sys.argv[0]} <unfolding_filename.npz> <unfolding_number:0>")
+    sys.exit(-1)
+    
+unfolding_filename = sys.argv[1]
+unfolding_number = 0
+if(len(sys.argv)>=3): unfolding_number = int(sys.argv[2])
 
-arcpos      = f['Arcpos'][0]
-pentagon_ix = f['Pentagon_ix'][0]
-path        = f['Paths'][0]
+f = np.load(unfolding_filename,allow_pickle=True)    
+arcpos      = f['Arcpos'][unfolding_number]
+pentagon_ix = f['Pentagon_ix'][unfolding_number]
+path        = f['Paths'][unfolding_number]
+isomer      = dict(zip(f['isomer_keys'][:], f['isomer_values'][:]))
+root_node   = path[0,0,0]
 
-root_node = path[0,0,0]
-print(root_node)
-root_node = 9
+print(f"Loaded unfoldings for isomer {isomer['name']}.")
 
-unfolding_subgraph = arcpos_to_unfolding(data.dual_neighbours,arcpos)
+dual_neighbours  = isomer['dual_neighbours']
+cubic_neighbours = isomer['cubic_neighbours']
+hexagons         = isomer['hexagons']
+pentagons        = isomer['pentagons']
 
-faces = faces_from_hp(data.dual_neighbours, data.hexagons,data.pentagons)
+unfolding_subgraph = arcpos_to_unfolding(dual_neighbours,arcpos)
+faces = faces_from_hp(dual_neighbours, hexagons, pentagons)
+
+print(f"Root face is {faces[root_node]}, dual vertex {root_node}")
 
 tree, hinges, connected_hinges = minimal_spanning_tree(unfolding_subgraph, root_node, faces)
 
 tree, affected_vs, hinges, connected_hinges = hinges_traversed(unfolding_subgraph, faces, root_node)
 
-N  = len(data.cubic_neighbours)
-Nf = len(data.dual_neighbours)
+N  = len(cubic_neighbours)
+Nf = len(dual_neighbours)
 gg = {u:unfolding_subgraph[u] for u in range(Nf)}
 tt = {u:tree[u] for u in range(Nf) if tree[u] != []}
 ff = {f:faces[f] for f in range(Nf)}
 
-#print(f"subgraph: {gg}")
-#print(f"faces: {ff}")
-print(f"tree: {tt}\n\n")
-#print(f"hinges[0]: {hinges[0]}\n\n"
-#      f"hinges[1]: {hinges[1]}\n")
+print(f"subgraph: {gg}")
+print(f"faces: {ff}")
+print(f"tree: {tt}\n")
+print(f"hinges[0]: {hinges[0]}\n"
+      f"hinges[1]: {hinges[1]}\n")
 #print(f'face 9 contains atoms {faces[9]} : face 20 contains atoms {faces[20]}\n')
 planar_geometry = draw_vertices_unfolding(unfolding_subgraph,faces,root_node,bond_angles,bond_lengths)
 
@@ -61,7 +73,7 @@ unfolding_faces = [faces[u] for u in unfolding_faceids]
 fig = plot_unfolding(planar_geometry,faces,unfolding_faces)
 plt.show()
 
-X = data.points_opt
+X = isomer['points_opt']
 closed_normals = np.zeros((Nf,3),dtype=float)
 closed_normals[pent_id] = mean_normal(X, pentagons)
 closed_normals[hex_id] = mean_normal(X, hexagons)
