@@ -4,6 +4,9 @@ from numpy.lib.function_base import angle
 from functions_folding import *
 from geometry_functions import *
 import data.C120D6_fat as data
+from vedo import show, Spheres, Mesh, printc
+from plot_vedo import plot_unfolding_vedo, MainWindow
+from PyQt5 import Qt
 
 bond_angles  = np.array([108.,120.])*np.pi/180
 bond_lengths = np.array([1.458,1.401])
@@ -58,8 +61,8 @@ unfolding_normals[hex_id] = mean_normal(planar_geometry, hexagons)
 unfolding_faceids = [u for u in range(Nf) if unfolding_subgraph[u] != [] ] 
 unfolding_faces = [faces[u] for u in unfolding_faceids]
 
-fig = plot_unfolding(planar_geometry,faces,unfolding_faces)
-plt.show()
+plot_unfolding_vedo(planar_geometry,unfolding_faces)
+
 
 X = data.points_opt
 closed_normals = np.zeros((Nf,3),dtype=float)
@@ -70,11 +73,16 @@ angles_final = [angle_vec(closed_normals[u],closed_normals[v],degrees=False) for
 angles_final = calculate_final_angles(X, unfolding_subgraph, hinges)
 
 #for hinge in range(len(hinges[0])):
-for hinge in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]:
-    update_transform(planar_geometry, hinge, hinges, affected_vs, angles_final[hinge])
+#for hinge in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]:
+#    update_transform(planar_geometry, hinge, hinges, affected_vs, angles_final[hinge])
 
-fig = plot_unfolding(planar_geometry,faces,unfolding_faces)
-plt.show()
+#fig = plot_unfolding(planar_geometry,faces,unfolding_faces)
+#plt.show()
+
+app = Qt.QApplication(sys.argv)
+window = MainWindow(planar_geometry, unfolding_faces, hinges, affected_vs, angles_final)
+app.aboutToQuit.connect(window.onClose)
+app.exec_()
 
 #angles_final = calculate_final_angles(closed_vertices, graph_unfolding_faces, hinges)
 print(angles_final)
