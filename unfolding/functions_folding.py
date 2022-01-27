@@ -172,6 +172,12 @@ def minimal_spanning_tree(graph,root,faces):
         hinge = []
         flip = False
         found_first_vertex = False
+
+        ### Test some stuff for simplification
+        intersection = set(faces[i]) & set(faces[j])
+        print(f"The intersection of the two faces are: {intersection}")
+        ###
+        
         # Iterate through all vertices of a parent face i
         for u in faces[i]:
             found_vertex = False
@@ -364,10 +370,12 @@ def affected_children(tree, hinges, faces, root):
         aff_children[hinge_id] = children
         tmp = []
         for face in children:
-            for vertex in faces[face]:  
+            for vertex in faces[face]:
                 tmp.append(vertex)
         affected_vertices[hinge_id] = list(set(tmp))
     
+    '''
+    ### OLD STUFF ###
     # delete duplicates if their hinge has the same depth
     max_depth = len(hinges[0])
     affected_depth = []
@@ -382,6 +390,26 @@ def affected_children(tree, hinges, faces, root):
                 affected_vertices[i].remove(j)
             else:
                 affected_depth[depth].append(j)
+    '''
+
+    # delete duplicate vertices from the affected vertices
+    max_depth = len(hinges[0])
+    affected_depth = []
+    for i in range(max_depth):
+        affected_depth.append([]) # create a list of lists which contains all vertices that are affected by hinges at a certain depth
+
+    for i in range(len(hinges[0])): # for all hinges 
+        hinge = hinges[0][i]
+        depth = depth_tree(tree, hinge[1], root) # first get their depth
+        for j in affected_vertices[i]: # check for all affected vertices by this hinge if it has already been affected (1) by a hinge with higher level (2) and remove it from the vertices if that is the case (3)
+            for d in np.arange(depth+1): # (2)
+                #print(f"Currently working on depth: {d}")
+                if j in affected_depth[d]: # (1)
+                    affected_vertices[i].remove(j) #(3)
+                    #print(f"Found vertex {j} and removed it moving on to next vertex")
+                    break
+                else:
+                 affected_depth[depth].append(j)
 
     return affected_vertices
 
@@ -455,6 +483,7 @@ def draw_face(dual_planar, hinges, face, h,bond_angles, bonding_lengths):
     '''
     This function draws a face either hexagon or pentagon on the two dimensional plane from a given mother hinge by rotating around it 
     '''
+    print(f"hinges[0]: {hinges[0]} \nhinges[1]: {hinges[1]}")
     u,v = hinges[0][h]          # hinges[0] = dual_hinges
     a,b = hinges[1][h]          # hinges[1] = cubic_hinges
     

@@ -17,7 +17,8 @@ if(len(sys.argv)<2):
     
 unfolding_filename = sys.argv[1]
 unfolding_number = 0
-if(len(sys.argv)>=3): unfolding_number = int(sys.argv[2])
+if(len(sys.argv)>=3): 
+    unfolding_number = int(sys.argv[2])
 
 f = np.load(unfolding_filename,allow_pickle=True)    
 arcpos      = f['Arcpos'][unfolding_number]
