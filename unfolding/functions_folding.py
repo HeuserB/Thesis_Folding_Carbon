@@ -7,7 +7,7 @@ import h5py
 from matplotlib import cm
 import sys
 
-from numpy.lib.shape_base import get_array_wrap
+#from numpy.lib.shape_base import get_array_wrap
 
 NA = np.newaxis
 
@@ -76,7 +76,7 @@ def faces_from_hp(dual_graph, hexagons, pentagons):
 def internal_faces(dual_graph, arcpos):
     Nf = len(dual_graph)
     
-    internal_arc       = np.zeros((Nf,6),bool)
+    internal_arc = np.zeros((Nf,6),bool)
     
     for u in range(Nf):
         for j in range(len(dual_graph[u])):
@@ -89,10 +89,9 @@ def internal_faces(dual_graph, arcpos):
             internal_arc[u,j] = ((xv == rxv) & (xu == rxu)).all()
 
     number_internal_arcs = np.sum(internal_arc.astype(int),axis=1)
-
     return number_internal_arcs
 
-def unfolding_faces(dual_graph,arcpos,pent_ix, number_internal_arcs):
+def unfolding_faces(dual_graph, arcpos, pent_ix, number_internal_arcs):
 
     unfolding_face = (number_internal_arcs==6) # Hexagons that have all arcs internal are in the unfolding
     
@@ -135,11 +134,21 @@ def arcpos_to_unfolding(dual_graph,arcpos):
 # root:  root face, node in dual graph
 # faces: atoms in faces (cubic graph node ids)
 def minimal_spanning_tree(graph,root,faces):
-    ### graph:  list[list[int]]; list of list of the graph, which face is neighobour of which face 
-    ### root:   int; index of the root face to create MST
-    ### faces:  list[list[int]]; list of list, which atom indices make up which face 
-    # This function will return the faces between which we have hinges in a spanning tree manner
-    
+    '''
+    INPUT:
+    graph:  list[list[int]]; list of list of the graph, which face is neighobour of which face 
+    root:   int; index of the root face to create MST
+    faces:  list[list[int]]; list of list, which atom indices make up which face
+
+    OUTPUT:
+    tree:  list[list[int]]; list of lists of the face subgraph in a spanning tree manner
+    hinges:  list[list[[int_a,int_b],...] , list[[int_c,int_d],...]] list of two lists: first is the hinges as lists of parent hinge int_a and child int_b 
+    connected_hinges:  
+
+    This function will return the faces between which we have hinges in a spanning tree manner
+    '''
+
+    ### classic MST algorithm part
     if root >= len(graph): 
         print("Please enter a valid root node!")
         return
@@ -150,7 +159,8 @@ def minimal_spanning_tree(graph,root,faces):
     tree = [ [] for i in range(len(graph)) ]
     connected_hinges = [ [] for i in range(len(graph)) ]
     visited[root] = True
-    hinge = 0 
+    hinge = 0
+
     while queue:
             # Take a vertex from the queque
             s = queue.pop(0)
@@ -167,6 +177,7 @@ def minimal_spanning_tree(graph,root,faces):
                     connected_hinges[s].append(hinge)
                     hinge += 1
 
+
     hinges_traversed = []
     for i,j in hinges:
         hinge = []
@@ -177,7 +188,7 @@ def minimal_spanning_tree(graph,root,faces):
         intersection = set(faces[i]) & set(faces[j])
         print(f"The intersection of the two faces are: {intersection}")
         ###
-        
+
         # Iterate through all vertices of a parent face i
         for u in faces[i]:
             found_vertex = False
