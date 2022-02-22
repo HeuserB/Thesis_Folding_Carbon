@@ -1153,3 +1153,12 @@ def face_type(faces):
     hex_id = np.array(hex_id)
     pent_id = np.array(pent_id)
     return pent_id, hex_id
+
+
+def make_arc2cubic(triangles):
+    arc2cubic = {}
+
+    # Assign cubic nodes to dual triangles according to order triangles in isomer.triangles
+    for i, triangle in enumerate(triangles):
+        for j in range(len(triangle)):
+            arc2cubic[triangle[j], triangle[(j+1)%len(triangle)]] = i      
