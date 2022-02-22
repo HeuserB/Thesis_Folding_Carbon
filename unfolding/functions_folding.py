@@ -186,7 +186,7 @@ def minimal_spanning_tree(graph,root,faces):
 
         ### Test some stuff for simplification
         intersection = set(faces[i]) & set(faces[j])
-        print(f"The intersection of the two faces are: {intersection}")
+        print(f"The intersection of face {i} ({faces[i]}) and face {j} ({faces[j]}) are: {intersection}")
         ###
 
         # Iterate through all vertices of a parent face i
