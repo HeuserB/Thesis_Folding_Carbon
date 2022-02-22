@@ -1,14 +1,82 @@
+'''
+This module contains all functions that are related to the 3D geometry
+'''
+
 import numpy as np
 from numpy.lib.shape_base import get_array_wrap
-from functions_folding import angle_vec
 NA = np.newaxis 
 
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+
+    INPUT:
+    axis: 3d array of the exis around which the rotation is applied
+    theta: angle in radians of the applied rotation
+
+    OUTPUT:
+    3 by 3 np.array with the rotation matrix 
+    """
+    # get the axis as a 64 bit float for higher precision
+    axis = np.asarray(axis,dtype=np.float64)
+    axis = axis / np.sqrt(np.dot(axis, axis))
+
+    a = np.cos(theta / 2.0)
+    b, c, d = -axis * np.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]],dtype=np.float64)
+
+def rot_2d(theta):
+    '''
+    Returns the rotation matrix for a rotation around the z-axis 
+
+    INPUT:
+    theta: angle of rotation in radians
+
+    OUTPUT: 
+    2 by 2 np.array with the rotation matrix 
+    '''
+    return np.array([[np.cos(theta), np.sin(theta)],[- np.sin(theta), np.cos(theta)]])
+
+def rotate_vector(vec,phi):
+    M_rot = rot_2d(phi)
+    return np.matmul(M_rot,vec)
+
+
+def angle_vec(a,b,degrees = True):
+    c = np.sum(a * b, axis = -1)
+    tmp = c / (np.sqrt(np.sum(a**2, axis = -1)) * np.sqrt(np.sum(b**2, axis = -1)))
+    if degrees == True:
+        return np.degrees(np.arccos(tmp))
+    else:
+        return np.arccos(tmp)
+
+def Eisenstein_to_Carth(x_eis,unit_dist = 1):
+    '''
+    Return the Eisenstein coordinates of two dimensional input vertices
+    INPUT:
+
+    OUTPUT:
+
+    '''
+    omega = np.exp(1j * 2. * np.pi / 6)
+    tmp = x_eis[:,0] + x_eis[:,1] * omega
+    x_cart = np.concatenate([np.array([np.real(tmp),np.imag(tmp)]).T, np.zeros_like(x_eis[:,0])[:,None]], axis=1)
+    return (x_cart * unit_dist)
+
 def vote_on_normal(normals):
-    # Given a set of normal vectors 
-    # find the mean direction and multiply 
-    # each normal vector with the 
-    # sign to make them point in the same 
-    # direction
+    '''
+    Given a set of normal vectors find the mean direction and multiply each normal vector with the sign to make them point in the same direction
+    INPUT:
+    normals: a set of normal vectors as np.array 
+
+    OUTPUT:
+    a set of normal vectors pointing in the direction of the majority of the vectors
+    '''
 
     # find a non-zero normal vector
     non_zero = np.argmax((normals**2).sum(axis=-1), axis=-1)
@@ -41,10 +109,14 @@ def vote_on_normal(normals):
     return change_sign[...,NA] * signs
 
 def mean_normal(vertices, faces):
-    # Return the mean normal vector
-    # for each face, given the 
-    # vertices and the face array 
-    # either hexagons or pentagons
+    '''
+    # Return the mean normal vector for each face, given the vertices and the face array either hexagons or pentagons
+    INPUT:
+
+    OUTPUT:
+
+    '''
+
     vec_left = vertices[faces] - vertices[np.roll(faces, -1, axis = -1)]
     vec_right = vertices[np.roll(faces, 1, axis = -1)] - vertices[faces]
 
