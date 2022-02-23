@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from copy import deepcopy
+from copy import copy, deepcopy
 import re
 import h5py
 from matplotlib import cm
@@ -109,25 +109,6 @@ def unfolding_faces(dual_graph, arcpos, pent_ix, number_internal_arcs):
 #        print(f"pentagon {p} -> unfolding_face: {unfolding_face[p]}")
 
     return unfolding_face
-
-def arcpos_to_unfolding(dual_graph,arcpos):
-    Nf = len(dual_graph)
-    degrees = np.array([len(row) for row in dual_graph])
-    pent_ix = np.argwhere(degrees==5).flatten()
-    hex_ix  = np.argwhere(degrees==6).flatten()
-
-    number_internal_arcs = internal_faces(dual_graph,arcpos)
-    unfolding_face       = unfolding_faces(dual_graph,arcpos,pent_ix,number_internal_arcs)
-
-    uf_faces    = {f[0]: dual_graph[f[0]] for f in np.argwhere(unfolding_face)}
-    not_present = np.argwhere(~unfolding_face)
-    
-    dual_subgraph = [[] for _ in range(Nf)]
-    for u in range(Nf):
-        if(unfolding_face[u]):
-            dual_subgraph[u] = [v for v in dual_graph[u] if unfolding_face[v] ]
-
-    return dual_subgraph
 
 
 # graph: dual graph subgraph of faces included in unfolding: dual nodes for faces not included have []-entries
@@ -476,7 +457,7 @@ def triangulate_polygone(polygones,num_of_vertices):
     The created midpoints will allways be appended at the end of the vertices_extended (optimise later)
     """
 
-    faces = np.empty([1,3],dtype=np.int)
+    faces = np.empty([1,3],dtype=int)
     for i in range(len(polygones)):
         tmp = np.array(polygones[i])
         face = np.concatenate([tmp[:,None],np.hstack([tmp[1:],tmp[0]])[:,None],np.repeat(num_of_vertices + i,len(tmp))[:,None]],axis=1)
@@ -644,12 +625,12 @@ def hex_and_pents(graph_unfolding_faces):
 def make_graph_array(graph_unfolding, graph, halogen_positions, neighbours = 3):
     ### Take the uncomplete graph which is missing some of the bonds and complete it by adding hydrogens and halogens at the given positions ###
     ### 
-    graph_array = np.zeros([len(graph_unfolding),neighbours],dtype=np.int)
+    graph_array = np.zeros([len(graph_unfolding),neighbours],dtype=int)
     periphery = 0
     hydrogens = 0
     halogens = 0
     periphery_type = []
-    hydrogen_positions = np.zeros(len(graph_unfolding),dtype=np.int)
+    hydrogen_positions = np.zeros(len(graph_unfolding),dtype=int)
     periphery_graph = []
     parent_atom = []
     ### Go through the whole graph and all its neighbours and see which ones are not in the graph of the unfolding ###
@@ -848,7 +829,7 @@ def xyz_to_string(coordinates):
     tmp += "\n"
     return tmp
 
-def write_gaussfile(unfolding, header, double_hydrogens=np.array([],dtype=np.int), freeze=False, connectivity=False, writeFile=False, rotate=False, phis=[0.,0.], axes=None, atoms=None, filename="OutFile.com", freezelist=[], halogen=0, interpolated_angles = None):
+def write_gaussfile(unfolding, header, double_hydrogens=np.array([],dtype=int), freeze=False, connectivity=False, writeFile=False, rotate=False, phis=[0.,0.], axes=None, atoms=None, filename="OutFile.com", freezelist=[], halogen=0, interpolated_angles = None):
         name = re.split("_initialise",filename)[0]
         name = re.split("/", name)[-1]
         #title_init = filename + "-initialise"
@@ -983,7 +964,7 @@ def write_gaussfile(unfolding, header, double_hydrogens=np.array([],dtype=np.int
         else:
             return text
 
-def write_gaussfile_restart(unfolding, header, double_hydrogens=np.array([],dtype=np.int), freeze=False, connectivity=False, writeFile=False, rotate=False, phis=[0.,0.], axes=None, atoms=None, filename="OutFile.com", freezelist=[], halogen=0, interpolated_angles = None):
+def write_gaussfile_restart(unfolding, header, double_hydrogens=np.array([],dtype=int), freeze=False, connectivity=False, writeFile=False, rotate=False, phis=[0.,0.], axes=None, atoms=None, filename="OutFile.com", freezelist=[], halogen=0, interpolated_angles = None):
     header_restart =  restart_header(header)
     filename_init = filename + "_initialise"
     write_gaussfile(unfolding, header, double_hydrogens, freeze, connectivity, writeFile, rotate, phis, axes, atoms, filename_init, freezelist, halogen, interpolated_angles=interpolated_angles)
@@ -1161,4 +1142,52 @@ def make_arc2cubic(triangles):
     # Assign cubic nodes to dual triangles according to order triangles in isomer.triangles
     for i, triangle in enumerate(triangles):
         for j in range(len(triangle)):
-            arc2cubic[triangle[j], triangle[(j+1)%len(triangle)]] = i      
+            arc2cubic[triangle[j], triangle[(j+1)%len(triangle)]] = i
+
+    return arc2cubic
+
+
+def unfolding_dual_graph(isomer,arcpos):
+    def unique_source(A):
+        return len(set([tuple(a[0]) for a in A]))==1
+
+    def remove_node(g,u):
+        nu = g[u]
+        for v in nu:
+            g[v].remove(u)
+        g[u] = []
+    
+    uf_dg = deepcopy(isomer['dual_neighbours'])
+    degrees = np.array([len(row) for row in uf_dg])    
+    Nf    = len(uf_dg)
+    
+    for u in range(Nf):
+        if not unique_source(arcpos[u][:degrees[u]]):
+            remove_node(uf_dg,u)
+    
+    return uf_dg
+
+
+def unfolding_bonds(uf_dg, isomer, arcpos):
+    arc2cubic = make_arc2cubic(isomer['triangles'])
+
+    included_bonds = set()
+    
+    for u, f in enumerate(uf_dg):
+        d = len(f)
+        for i in range(d):
+            a,b = arc2cubic[u,f[i]], arc2cubic[u,f[(i+1)%d]]
+            included_bonds.add( (min(a,b), max(a,b)) )
+
+    uf_g  = isomer['cubic_neighbours'] # Full cubic graph
+    ufi_g = deepcopy(uf_g).tolist()              # Bonds included in unfolding
+    ufb_g = deepcopy(uf_g).tolist()              # Bonds broken in unfolding
+    print(ufi_g)
+    for a, na in enumerate(uf_g):
+        for b in na:
+            if (min(a,b),max(a,b)) in included_bonds:
+                ufb_g[a].remove(b)
+            else:
+                ufi_g[a].remove(b)                
+
+    return ufi_g, ufb_g
