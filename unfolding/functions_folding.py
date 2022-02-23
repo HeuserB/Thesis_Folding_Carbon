@@ -1104,6 +1104,7 @@ def face_type(faces):
     return pent_id, hex_id
 
 
+# Map translating dual arc to the cubic node corresponding to the triangle it's part of
 def make_arc2cubic(triangles):
     arc2cubic = {}
 
@@ -1114,6 +1115,7 @@ def make_arc2cubic(triangles):
 
     return arc2cubic
 
+# Map translating dual arc to cubic arc
 def make_darc2carc(isomer,arc2cubic):
     darc2carc = {}
     dg = isomer['dual_neighbours']
