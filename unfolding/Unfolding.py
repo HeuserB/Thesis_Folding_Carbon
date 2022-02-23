@@ -16,20 +16,25 @@ from geometry_functions import *
 class Unfolding(object):
     def __init__(self, dual_unfolding, graph_unfolding_faces, graph_faces, graph_unfolding, graph, halogen_positions, root_node, bonds_toBe, angles_f):
 
-        self.dual_unfolding = dual_unfolding
-        self.graph_unfolding = graph_unfolding
-        self.graph = graph
-        self.root_node = root_node  ### Index of the root face
-        self.n_carbon = len(graph_unfolding)
-        self.n_halogen = len(np.where(halogen_positions != 0)[0]) 
-        self.graph_unfolding_array, self.periphery, self.hydrogen_positions, self.graph_periphery, self.periphery_type, self.parent_atom = make_graph_array(self.graph_unfolding, self.graph, halogen_positions, neighbours=3)
-        self.n_hydrogen = self.periphery - self.n_halogen
-        self.graph_unfolding_faces = graph_unfolding_faces
-        self.graph_faces = graph_faces
-        self.vertices_final = None
-        self.halogen_positions = halogen_positions
-        self.halogen_parent_atom = np.where(self.halogen_positions!= 0)[0]
-        self.hydrogen_parent_atom = np.where(self.hydrogen_positions!= 0)[0]
+        self.dual_unfolding         = dual_unfolding
+        self.graph_unfolding        = graph_unfolding
+        self.graph                  = graph
+        self.root_node              = root_node  ### Index of the root face
+        self.n_carbon               = len(graph_unfolding)
+        self.n_halogen              = len(np.where(halogen_positions != 0)[0]) 
+        self.graph_unfolding_array,\
+            self.periphery,\
+            self.hydrogen_positions,\
+            self.graph_periphery,\
+            self.periphery_type,\
+            self.parent_atom        = make_graph_array(self.graph_unfolding, self.graph, halogen_positions, neighbours=3)
+        self.n_hydrogen             = self.periphery - self.n_halogen
+        self.graph_unfolding_faces  = graph_unfolding_faces
+        self.graph_faces            = graph_faces
+        self.vertices_final         = None
+        self.halogen_positions      = halogen_positions
+        self.halogen_parent_atom    = np.where(self.halogen_positions!= 0)[0]
+        self.hydrogen_parent_atom   = np.where(self.hydrogen_positions!= 0)[0]
         np.random.seed(12)  ### Define a random seed
 
         ### Dissociation energy and bond distacne matrix in the order H-F-Cl-C
@@ -43,6 +48,17 @@ class Unfolding(object):
         self.right_face = init_face_right(self.graph, self.graph_faces)
 
         ### Define the bonds which have to be formed and are therfore removed from the graph ###
+
+        if not isinstance(bonds_toBe, np.ndarray):
+            n_removed_bonds     = sum([bonds != [] for bonds in bonds_toBe])
+            bonds               = np.empty([n_removed_bonds,2])
+            bond_id             = 0 
+            for node_id, v in enumerate(bonds_toBe):
+                if bonds_toBe != []:
+                    bonds[bond_id][0]   = node_id
+                    bonds[bond_id][1]   = v
+                    bond_id             += 1               
+
         self.bonds_toBe = bonds_toBe
 
 
