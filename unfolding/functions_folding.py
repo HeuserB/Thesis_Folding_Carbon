@@ -25,7 +25,6 @@ def faces_from_hp(dual_graph, hexagons, pentagons):
     pent_ix = degrees==5
     hex_ix  = degrees==6
 
-    
     faces = [[] for f in range(Nf)]
     h_ix, p_ix = 0, 0
     for f in range(Nf):
@@ -37,7 +36,7 @@ def faces_from_hp(dual_graph, hexagons, pentagons):
             h_ix += 1
 
     pents = [faces[i] for i in range(len(pent_ix)) if pent_ix[i]]
-    hexs = [faces[i] for i in range(len(hex_ix)) if hex_ix[i]]
+    hexs  = [faces[i] for i in range(len(hex_ix)) if hex_ix[i]]
 
     #gg = {u: dual_graph[u] for u in range(Nf)}
     #print(f'Dual_graph is: {gg}\n')
@@ -1105,9 +1104,9 @@ def face_type(faces):
 
 
 # Map translating dual arc to the cubic node corresponding to the triangle it's part of
-def make_arc2cubic(triangles):
+def make_arc2cubic(isomer):
     arc2cubic = {}
-
+    triangles = isomer['triangles']
     # Assign cubic nodes to dual triangles according to order triangles in isomer.triangles
     for i, triangle in enumerate(triangles):
         for j in range(len(triangle)):
@@ -1150,7 +1149,7 @@ def unfolding_dual_graph(isomer,arcpos):
 
 
 def unfolding_bonds(uf_dg, isomer, arcpos):
-    arc2cubic = make_arc2cubic(isomer['triangles'])
+    arc2cubic = make_arc2cubic(isomer)
 
     included_bonds = set()
     dg = isomer['dual_neighbours']
@@ -1175,3 +1174,15 @@ def unfolding_bonds(uf_dg, isomer, arcpos):
                 ufi_g[a].remove(b)                
 
     return ufi_g, ufb_g
+
+def make_faces(dg, arc2cubic):       
+    faces = [];
+
+    for u, nu in enumerate(dg):
+        f = []
+        for v in nu:
+            a = arc2cubic[u,v]
+            f += [a]
+#        print(f"face {u} has dual neighbours {nu}. These become the atoms: {f}")            
+        faces += [f]
+    return faces

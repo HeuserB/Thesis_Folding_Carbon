@@ -34,18 +34,26 @@ cubic_neighbours = isomer['cubic_neighbours']
 hexagons         = isomer['hexagons']
 pentagons        = isomer['pentagons']
 
-unfolding_subgraph = arcpos_to_unfolding(dual_neighbours,arcpos)
-faces = faces_from_hp(dual_neighbours, hexagons, pentagons)
+arc2cubic = make_arc2cubic(isomer)
+darc2carc = make_darc2carc(isomer,arc2cubic)
+
+#unfolding_subgraph = arcpos_to_unfolding(dual_neighbours,arcpos)
+uf_dg = unfolding_dual_graph(isomer,arcpos)
+ufi_g, ufb_g = unfolding_bonds(uf_dg,isomer,arcpos)
+
+arc2cubic = make_arc2cubic(isomer)
+darc2carc = make_darc2carc(isomer,arc2cubic)
+faces = make_faces(dual_neighbours,arc2cubic)
 
 print(f"Root face is {faces[root_node]}, dual vertex {root_node}")
 
-tree, hinges, connected_hinges = minimal_spanning_tree(unfolding_subgraph, root_node, faces)
+tree, hinges, connected_hinges = minimal_spanning_tree(uf_dg, root_node, faces)
 
-tree, affected_vs, hinges, connected_hinges = hinges_traversed(unfolding_subgraph, faces, root_node)
+tree, affected_vs, hinges, connected_hinges = hinges_traversed(uf_dg, faces, root_node)
 
 N  = len(cubic_neighbours)
 Nf = len(dual_neighbours)
-gg = {u:unfolding_subgraph[u] for u in range(Nf)}
+gg = {u:uf_dg[u] for u in range(Nf)}
 tt = {u:tree[u] for u in range(Nf) if tree[u] != []}
 ff = {f:faces[f] for f in range(Nf)}
 
@@ -55,7 +63,7 @@ print(f"tree: {tt}\n")
 print(f"hinges[0]: {hinges[0]}\n"
       f"hinges[1]: {hinges[1]}\n")
 #print(f'face 9 contains atoms {faces[9]} : face 20 contains atoms {faces[20]}\n')
-planar_geometry = draw_vertices_unfolding(unfolding_subgraph,faces,root_node,bond_angles,bond_lengths)
+planar_geometry = draw_vertices_unfolding(uf_dg,faces,root_node,bond_angles,bond_lengths)
 
 unfolding_normals = np.zeros((Nf,3),dtype=float)
 
@@ -72,7 +80,7 @@ hexagons, pentagons = np.array(hexagons), np.array(pentagons)
 unfolding_normals[pent_id] = mean_normal(planar_geometry, pentagons)
 unfolding_normals[hex_id] = mean_normal(planar_geometry, hexagons)
 
-unfolding_faceids = [u for u in range(Nf) if unfolding_subgraph[u] != [] ] 
+unfolding_faceids = [u for u in range(Nf) if uf_dg[u] != [] ] 
 unfolding_faces = [faces[u] for u in unfolding_faceids]
 
 plot_unfolding_vedo(planar_geometry,unfolding_faces)
@@ -84,7 +92,7 @@ closed_normals[pent_id] = mean_normal(X, pentagons)
 closed_normals[hex_id] = mean_normal(X, hexagons)
 angles_final = [angle_vec(closed_normals[u],closed_normals[v],degrees=False) for u,v in hinges[0]]
 
-angles_final = calculate_final_angles(X, unfolding_subgraph, hinges)
+angles_final = calculate_final_angles(X, uf_dg, hinges)
 
 #for hinge in range(len(hinges[0])):
 #for hinge in [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]:
@@ -104,7 +112,7 @@ print(angles_final)
 # For the folding up to work we will need:
 # 
 # dual_unfolding, = planar_geometry
-# graph_unfolding_faces, = unfolding_subgraph
+# graph_unfolding_faces, = uf_dg
 # graph_faces, = faces
 # graph_unfolding, = !!! Subgraph of the unfolding 
 # graph, = dual_neighbours
