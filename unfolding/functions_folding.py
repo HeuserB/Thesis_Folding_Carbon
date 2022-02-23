@@ -1,3 +1,6 @@
+'''
+This module includes all functions that are related to the graph theory part of the unfolding
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -6,6 +9,7 @@ import re
 import h5py
 from matplotlib import cm
 import sys
+from geometry_functions import *
 
 #from numpy.lib.shape_base import get_array_wrap
 
@@ -14,35 +18,6 @@ NA = np.newaxis
 #bonding_lengths = np.array([1.458,1.401]) 
 #bond_angles = np.radians(np.array([108.,120.]))
 #k = np.array([5,6]) *100
-
-def rotation_matrix(axis, theta):
-    """
-    Return the rotation matrix associated with counterclockwise rotation about
-    the given axis by theta radians.
-    """
-    axis = np.asarray(axis,dtype=np.float64)
-    axis = axis / np.sqrt(np.dot(axis, axis))
-    a = np.cos(theta / 2.0)
-    b, c, d = -axis * np.sin(theta / 2.0)
-    aa, bb, cc, dd = a * a, b * b, c * c, d * d
-    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
-    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
-                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
-                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]],dtype=np.float64)
-
-def rot_2d(theta):
-    return np.array([[np.cos(theta), np.sin(theta)],[- np.sin(theta), np.cos(theta)]])
-
-def rotate_vector(vec,phi):
-    M_rot = rot_2d(phi)
-    return np.matmul(M_rot,vec)
-
-def Eisenstein_to_Carth(x_eis,unit_dist = 1):
-    omega = np.exp(1j * 2. * np.pi / 6)
-    tmp = x_eis[:,0] + x_eis[:,1] * omega
-    x_cart = np.concatenate([np.array([np.real(tmp),np.imag(tmp)]).T, np.zeros_like(x_eis[:,0])[:,None]], axis=1)
-    return (x_cart * unit_dist)
-
 
 def faces_from_hp(dual_graph, hexagons, pentagons):
     Nf = len(dual_graph)
@@ -123,8 +98,9 @@ def minimal_spanning_tree(graph,root,faces):
 
     OUTPUT:
     tree:  list[list[int]]; list of lists of the face subgraph in a spanning tree manner
-    hinges:  list[list[[int_a,int_b],...] , list[[int_c,int_d],...]] list of two lists: first is the hinges as lists of parent hinge int_a and child int_b 
-    connected_hinges:  
+    hinges:  list[list[[int_a,int_b],...] , list[[int_c,int_d],...]] list of two lists: first is the hinges as lists of parent hinge 
+             int_a and child int_b and the second list as the corresponding right-handed vertex connection int_c and int_d 
+    connected_hinges: 
 
     This function will return the faces between which we have hinges in a spanning tree manner
     '''
@@ -293,14 +269,6 @@ def depth_tree(tree, node, root):
 def get_rotational_axis(hinge_0, hinges, coordinates_3D):
     axis_cart = coordinates_3D[hinges[1][hinge_0][0]] - coordinates_3D[hinges[1][hinge_0][1]] 
     return  - axis_cart
-
-def angle_vec(a,b,degrees = True):
-    c = np.sum(a * b, axis = -1)
-    tmp = c / (np.sqrt(np.sum(a**2, axis = -1)) * np.sqrt(np.sum(b**2, axis = -1)))
-    if degrees == True:
-        return np.degrees(np.arccos(tmp))
-    else:
-        return np.arccos(tmp)
 
 def true_angle(a,b,degree = False, epsilon=1e-10):
     same = np.sum(np.abs(a - b) <= epsilon, axis=-1)
