@@ -19,34 +19,6 @@ NA = np.newaxis
 #bond_angles = np.radians(np.array([108.,120.]))
 #k = np.array([5,6]) *100
 
-def faces_from_hp(dual_graph, hexagons, pentagons):
-    Nf = len(dual_graph)
-    degrees = np.array([len(row) for row in dual_graph])
-    pent_ix = degrees==5
-    hex_ix  = degrees==6
-
-    faces = [[] for f in range(Nf)]
-    h_ix, p_ix = 0, 0
-    for f in range(Nf):
-        if pent_ix[f]:
-            faces[f] = list(pentagons[p_ix])
-            p_ix += 1
-        else:
-            faces[f] = list(hexagons[h_ix])
-            h_ix += 1
-
-    pents = [faces[i] for i in range(len(pent_ix)) if pent_ix[i]]
-    hexs  = [faces[i] for i in range(len(hex_ix)) if hex_ix[i]]
-
-    #gg = {u: dual_graph[u] for u in range(Nf)}
-    #print(f'Dual_graph is: {gg}\n')
-    #print(f'Pentagon indices are: {np.argwhere(pent_ix).flatten()}')
-    #print(f'Hexagon indices are:{np.argwhere(hex_ix).flatten()}')
-    #print(f'\nPentagons are: {pents}\n')
-    #print(f'\nHexagons are: {hexs}\n')
-    return faces
-
-
 def internal_faces(dual_graph, arcpos):
     Nf = len(dual_graph)
     
