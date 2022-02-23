@@ -1140,19 +1140,22 @@ def unfolding_bonds(uf_dg, isomer, arcpos):
     arc2cubic = make_arc2cubic(isomer['triangles'])
 
     included_bonds = set()
+    dg = isomer['dual_neighbours']
     
-    for u, f in enumerate(uf_dg):
-        d = len(f)
-        for i in range(d):
-            a,b = arc2cubic[u,f[i]], arc2cubic[u,f[(i+1)%d]]
-            included_bonds.add( (min(a,b), max(a,b)) )
+    for u, uf_f in enumerate(uf_dg):
+        if(uf_f != []):            # f is fully included in unfolding
+            f = dg[u]
+            d = len(f)
+            for i in range(d):
+                a,b = arc2cubic[u,f[i]], arc2cubic[u,f[(i+1)%d]]
+                included_bonds.add( (min(a,b), max(a,b)) )
 
     uf_g  = isomer['cubic_neighbours'] # Full cubic graph
-    ufi_g = deepcopy(uf_g).tolist()              # Bonds included in unfolding
-    ufb_g = deepcopy(uf_g).tolist()              # Bonds broken in unfolding
-    print(ufi_g)
-    for a, na in enumerate(uf_g):
-        for b in na:
+    ufi_g = deepcopy(uf_g).tolist()    # Bonds included in unfolding
+    ufb_g = deepcopy(uf_g).tolist()    # Bonds broken in unfolding
+
+    for a, neighbours_a in enumerate(uf_g):
+        for b in neighbours_a:
             if (min(a,b),max(a,b)) in included_bonds:
                 ufb_g[a].remove(b)
             else:
