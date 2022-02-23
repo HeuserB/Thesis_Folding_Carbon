@@ -1114,6 +1114,17 @@ def make_arc2cubic(triangles):
 
     return arc2cubic
 
+def make_darc2carc(isomer,arc2cubic):
+    darc2carc = {}
+    dg = isomer['dual_neighbours']
+
+    for u, nu in enumerate(dg):
+        for v in nu:
+            a = arc2cubic[u,v]
+            b = arc2cubic[v,u]
+            darc2carc[u,v] = (a,b)
+
+    return darc2carc
 
 def unfolding_dual_graph(isomer,arcpos):
     def unique_source(A):
