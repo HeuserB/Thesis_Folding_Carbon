@@ -357,14 +357,11 @@ class Unfolding(object):
     def collect_gradient(self):
         grad_pot, grad_periphery = self.update_force_bond()
         grad_pot_dist = np.concatenate([np.sum(grad_pot, axis=-2), grad_periphery])        
-        return grad_pot_dist
-        
-        
 
         grad_pot_angle = self.update_force_angle()
         grad_out_of_plane = self.update_out_of_plane()
 #        coulomb = self.coulomb_force() # NB: Coulomb forces switched off for now
-        grad = 0*np.sum(grad_pot_angle, axis = -2) + 0*np.sum(grad_out_of_plane, axis = -2) + grad_pot_dist # + 0*coulomb # NB: Coulomb forces switched off for now
+        grad = np.sum(grad_pot_angle, axis = -2) + 0*np.sum(grad_out_of_plane, axis = -2) + grad_pot_dist # + 0*coulomb # NB: Coulomb forces switched off for now
         #freeze = np.array([15,21,22,28,29,35])
         #grad[freeze] *= 0.
 
