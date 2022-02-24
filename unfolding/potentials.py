@@ -12,13 +12,12 @@ def harmonic_FC(atom_1, atom_2):
     r_ab = r_a + r_b + r_EN
     return 664.12 * (z_a * z_b) / r_ab
 
-def harm_pot(R, length, k):
-    Ui = 0.5 * k * (R - length)**2
+def harm_pot(Q, Q0, k):
+    Ui = 0.5 * k * (Q - Q0)**2
     return Ui
 
-def grad_harm_pot(D, R, length, k):
-    dE = - (R - length)[...,NA] * D * k[...,NA]
-    return dE
+def grad_harm_pot(D, Q, Q0, k):
+    return -D * (Q - Q0)[...,NA] * k[...,NA]
 
 def angle_spring_pot(vertices, k, graph, angles):
     left = vertices[:,np.newaxis,:] - vertices[graph]

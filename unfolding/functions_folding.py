@@ -1019,14 +1019,16 @@ def repulsion_matrix_periphery(graph_periphery, n_carbon):
     return periphery_matrix
 
 #
-def replace_periphery_constants(graph_unfolding_array, N, periphery_type,spring_lengths,out_of_plane_k, periphery_bond_lengths):
+def replace_periphery_constants(graph_unfolding_array, N, periphery_type,spring_lengths,spring_constants,out_of_plane_k, periphery_bond_lengths):
     
     for u, neighbours_u in enumerate(graph_unfolding_array):
         for i, v in enumerate(neighbours_u):
-            if u>= N:           # u is a periphery atom (hydrogen or halogen)
-                # TODO: Once we want to make simulation more physical, periphery bonds should be physically appropriate instead of same as C-C.                
-                spring_lengths[u][i] = periphery_bond_lengths[periphery_type[v-N]]
-                out_of_plane_k[u] = 0
+            if v>= N:           # v is a periphery atom (hydrogen or halogen)
+                # TODO: Once we want to make simulation more physical, periphery bonds should be physically appropriate instead of same as C-C.
+                spring_lengths[u][i] = periphery_bond_lengths[periphery_type[v-N]]                
+#                spring_constants[u][i] = 0 # NB: Switches off periphery for debugging
+                print(f"Setting optimal bond length of {u}--{v} to {spring_lengths[u][i]}")                
+#                out_of_plane_k[v] = 0
                 
 
 # # Replace cut bonds with bonds to periphery atoms: the hydrogen and halogens

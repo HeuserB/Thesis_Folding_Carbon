@@ -227,7 +227,7 @@ class Unfolding(object):
         self.out_of_plane_constants = np.ones_like(self.graph, dtype=np.float64) 
         print(f'Bonds to be: {self.bonds_toBe}')
         print(f'Halogene parent atom: {self.halogen_parent_atom}')
-        replace_periphery_constants(self.graph_unfolding_array,self.n_carbon,self.periphery_type,self.spring_lengths, self.out_of_plane_constants,self.periphery_bond_lengths)
+        replace_periphery_constants(self.graph_unfolding_array,self.n_carbon,self.periphery_type,self.spring_lengths, self.spring_constants,self.out_of_plane_constants,self.periphery_bond_lengths)
 #        remove_bonds(self.graph, self.bonds_toBe, self.spring_constants, self.angle_constants, self.out_of_plane_constants, self.spring_lengths, self.halogen_parent_atom)
 
         ### define the index array to add the force to ###
@@ -356,14 +356,21 @@ class Unfolding(object):
 
     def collect_gradient(self):
         grad_pot, grad_periphery = self.update_force_bond()
-        grad_pot_dist = np.concatenate([np.sum(grad_pot, axis=-2), grad_periphery])
+        grad_pot_dist = np.concatenate([np.sum(grad_pot, axis=-2), grad_periphery])        
+        return grad_pot_dist
+        
+        
+
         grad_pot_angle = self.update_force_angle()
         grad_out_of_plane = self.update_out_of_plane()
 #        coulomb = self.coulomb_force() # NB: Coulomb forces switched off for now
-        grad = np.sum(grad_pot_angle, axis = -2) + 0*np.sum(grad_out_of_plane, axis = -2) + grad_pot_dist # + 0*coulomb # NB: Coulomb forces switched off for now
+        grad = 0*np.sum(grad_pot_angle, axis = -2) + 0*np.sum(grad_out_of_plane, axis = -2) + grad_pot_dist # + 0*coulomb # NB: Coulomb forces switched off for now
         #freeze = np.array([15,21,22,28,29,35])
         #grad[freeze] *= 0.
-        self.a = - (1 / self.m)[...,NA] * grad
+
+        # self.a = - (1 / self.m)[...,NA] * grad
+
+
         return grad
 
     def velocity_verlet(self):
@@ -421,7 +428,14 @@ class Unfolding(object):
         return
     
     def optimise_geometry(self, delta = 1.):
+        self.update_displacements()
+        self.E = harm_pot(self.R_unfolding, self.spring_lengths, self.spring_constants)
+        print(f"E = {np.sum(self.E)}")
+        
         dG = self.collect_gradient()
+
+
+        
         step = - delta * dG
         self.vertex_coords += step
         return
