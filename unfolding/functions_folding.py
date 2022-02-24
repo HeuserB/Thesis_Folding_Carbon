@@ -114,7 +114,7 @@ def minimal_spanning_tree(graph,root,faces):
 
         ### Test some stuff for simplification
         intersection = set(faces[i]) & set(faces[j])
-        print(f"The intersection of face {i} ({faces[i]}) and face {j} ({faces[j]}) are: {intersection}")
+        #print(f"The intersection of face {i} ({faces[i]}) and face {j} ({faces[j]}) are: {intersection}")
         ###
 
         # Iterate through all vertices of a parent face i
@@ -172,7 +172,7 @@ def spanning_tree(graph_orig, root, faces, duplicates = False):
                 graph[i].remove(s)
                 hinges.append([s,i])
                 if duplicates == True:
-                    if depth_tree(MST,i, root) == depth_tree(MST,s, root):
+                    if depth_in_tree(MST,i, root) == depth_in_tree(MST,s, root):
                         tree[i].append(s)
                 connected_hinges[s].append(hinge)
                 hinge += 1
@@ -214,7 +214,23 @@ def spanning_tree(graph_orig, root, faces, duplicates = False):
 
     return [tree, hinges, connected_hinges]
 
-def depth_tree(tree, node, root):
+
+def tree_depth(tree,root):
+    d = 0
+    for c in tree[root]:
+        d = max(d, tree_depth(tree,c)+1)
+    return d
+
+def hinge_order(tree, root, dual_hinges):
+    order = [[] for i in range(tree_depth(tree,root))]
+    for i, hinge in enumerate(dual_hinges):
+        p,c   = hinge
+        depth = depth_in_tree(tree,p,root)
+        order[depth] += [i]
+
+    return order
+
+def depth_in_tree(tree, node, root):
     depth = 1
     if node == root:
         return 0
@@ -315,7 +331,7 @@ def affected_children(tree, hinges, faces, root):
 
     for i in range(len(hinges[0])):
         hinge = hinges[0][i]
-        depth = depth_tree(tree, hinge[1], root)
+        depth = depth_in_tree(tree, hinge[1], root)
         for j in affected_vertices[i]:
             if j in affected_depth[depth]:
                 affected_vertices[i].remove(j)
@@ -331,7 +347,7 @@ def affected_children(tree, hinges, faces, root):
 
     for i in range(len(hinges[0])): # for all hinges 
         hinge = hinges[0][i]
-        depth = depth_tree(tree, hinge[1], root) # first get their depth
+        depth = depth_in_tree(tree, hinge[1], root) # first get their depth
         for j in affected_vertices[i]: # check for all affected vertices by this hinge if it has already been affected (1) by a hinge with higher level (2) and remove it from the vertices if that is the case (3)
             for d in np.arange(depth+1): # (2)
                 #print(f"Currently working on depth: {d}")
@@ -414,7 +430,7 @@ def draw_face(dual_planar, hinges, face, h,bond_angles, bonding_lengths):
     '''
     This function draws a face either hexagon or pentagon on the two dimensional plane from a given mother hinge by rotating around it 
     '''
-    print(f"hinges[0]: {hinges[0]} \nhinges[1]: {hinges[1]}")
+#    print(f"hinges[0]: {hinges[0]} \nhinges[1]: {hinges[1]}")
     u,v = hinges[0][h]          # hinges[0] = dual_hinges
     a,b = hinges[1][h]          # hinges[1] = cubic_hinges
     
@@ -498,14 +514,14 @@ def draw_vertices_unfolding(dual_graph, faces, root_node, bond_angles, bonding_l
     dual_planar = np.zeros([num_of_vertices,2],dtype=np.float64)
     dual_planar = draw_root_face(dual_planar, faces, root_node, bond_angles, bonding_lengths)
 
-    print(f"root_node = {root_node}, root_face = {faces[root_node]}")
+#    print(f"root_node = {root_node}, root_face = {faces[root_node]}")
     
     tree, affected_children_tree, hinges, connected_hinges = hinges_traversed(dual_graph, faces, root_node)
 
     dual_hinges, cubic_hinges = hinges    
 
-    print(f"dual hinges:  {hinges[0]}\n"
-          f"cubic hinges: {hinges[1]}\n")
+    # print(f"dual hinges:  {hinges[0]}\n"
+    #       f"cubic hinges: {hinges[1]}\n")
 
     for h in range(len(dual_hinges)):
         u,v = dual_hinges[h]
@@ -624,7 +640,7 @@ def plot_unfolding(dual_planar, faces, dual_subgraph, savefig=False, filename=No
 
     midpoints = np.zeros([len(dual_subgraph),3],dtype=np.float64)
     for faceid, face in enumerate(dual_subgraph):
-        print(f'Drawing face {faceid} with vertices{face}')
+        #        print(f'Drawing face {faceid} with vertices{face}')
         #midpoint = self.vertex_coords[self.graph_faces[face]].mean(axis=0)
         midpoint = np.mean(dual_planar[face],axis=0)
         midpoints[faceid] = midpoint
@@ -966,7 +982,7 @@ def set_colors(graph_faces):
     return color
     
 def init_face_right(graph, faces):
-    ## check the combinations of three vertices and see if they belong to a pentogon on hexagon ##
+    ## check the combinations of three vertices and see if they belong to a pentagon or hexagon ##
     right_face = np.ones_like(graph, dtype=int) * (-1)
     vert_a, vert_b, vert_c = np.repeat(np.arange(len(graph))[...,NA],3,-1), graph, np.roll(graph,-1,axis=-1)
     corners = np.concatenate([vert_a[...,NA],vert_b[...,NA],vert_c[...,NA]], axis=-1)
@@ -1002,54 +1018,66 @@ def repulsion_matrix_periphery(graph_periphery, n_carbon):
         periphery_matrix[i - n_carbon] = tmp
     return periphery_matrix
 
-def remove_bonds(graph, bonds_removed, bond_k, angle_k, out_of_plane_k, spring_lengths, halogen_positions):
-
-    ### For each bond that is removed, four angle force constants have to be set to zero ###
-    """
-    a     b
-     \   /
-      (i)
-       |
-      (j)
-     /   \
-    d     c
-    """
-    ### When removing bond i-j, the two angles <(jib) and <(aib) as well as the two angles <(ijc) and <(cjd) have to be set to zero ###
-    ### Those can be easily found by looking through the points around a node, which form an angle ###
-    ### These are always given by the point (vert_a), its neighbour (vert_b) and the rotated neighbours (vert_c) and are thereby clearly defined ###
-    vert_a, vert_b, vert_c = np.repeat(np.arange(len(graph))[...,NA],3,-1), graph, np.roll(graph,1,axis=-1)
-    corners = np.concatenate([vert_a[...,NA],vert_b[...,NA],vert_c[...,NA]], axis=-1)
-
-    ### Now we can look through all the corners (defined by the three vertices) around all points and if two of ###
-    ### those vertices are in the removed bonds list, we set the correspodning angular k to zero  ###
+#
+def replace_periphery_constants(graph_unfolding_array, N, periphery_type,spring_lengths,out_of_plane_k, periphery_bond_lengths):
     
-    for pair in bonds_removed:
-        print(f'Removing bond: {pair}')
-        if pair[0] in halogen_positions:
-            spring_lengths[pair[0]][np.where(graph[pair[0]] == pair[1])[0]] = 1.35#,1.76]
-        else:
-            spring_lengths[pair[0]][np.where(graph[pair[0]] == pair[1])[0]] = 1.09
+    for u, neighbours_u in enumerate(graph_unfolding_array):
+        for i, v in enumerate(neighbours_u):
+            if u>= N:           # u is a periphery atom (hydrogen or halogen)
+                # TODO: Once we want to make simulation more physical, periphery bonds should be physically appropriate instead of same as C-C.                
+                spring_lengths[u][i] = periphery_bond_lengths[periphery_type[v-N]]
+                out_of_plane_k[u] = 0
+                
 
-        if pair[1] in halogen_positions:
-            spring_lengths[pair[1]][np.where(graph[pair[1]] == pair[0])[0]] = 1.35#,1.76]
-        else:
-            spring_lengths[pair[1]][np.where(graph[pair[1]] == pair[0])[0]] = 1.09
+# # Replace cut bonds with bonds to periphery atoms: the hydrogen and halogens
+# def remove_bonds(graph, bonds_removed, bond_k, angle_k, out_of_plane_k, spring_lengths, halogen_positions):
 
-        ### For a pair of removed bonds, set the force constant that correspond to that bond to zero ###
-        bond_k[pair[0]][np.where(graph[pair[0]] == pair[1])[0]] = 0.
-        bond_k[pair[1]][np.where(graph[pair[1]] == pair[0])[0]] = 0.
+#     ### For each bond that is removed, four angle force constants have to be set to zero ###
+#     """
+#     a     b
+#      \   /
+#       (u)
+#        |
+#       (v)
+#      /   \
+#     d     c
+#     """
+#     ### When removing bond u-v, the two angles <(vub) and <(aub) as well as the two angles <(ijc) and <(cjd) have to be set to zero ###
+#     ### Those can be easily found by looking through the points around a node, which form an angle ###
+#     ### These are always given by the point (vert_a), its neighbour (vert_b) and the rotated neighbours (vert_c) and are thereby clearly defined ###
+#     vert_a, vert_b, vert_c = np.repeat(np.arange(len(graph))[...,NA],3,-1), graph, np.roll(graph,1,axis=-1)
+#     corners = np.concatenate([vert_a[...,NA],vert_b[...,NA],vert_c[...,NA]], axis=-1)
 
-        ### Set the out of plane constants for all three vertices around the nodes to zero ### 
-        out_of_plane_k[pair[0]] *= 0.
-        out_of_plane_k[pair[1]] *= 0.
+#     ### Now we can look through all the corners (defined by the three vertices) around all points and if two of ###
+#     ### those vertices are in the removed bonds list, we set the correspodning angular k to zero  ###
+    
+#     for u,v in bonds_removed:
+#         print(f'Removing bond: {pair}')
+#         if u in halogen_positions:
+#             spring_lengths[u][np.where(graph[u] == v)[0]] = 1.35#,1.76]
+#         else:
+#             spring_lengths[u][np.where(graph[u] == v)[0]] = 1.09
 
-        ### Go through all nodes ###
-        for j in range(graph.shape[0]):
-            ### and all neighbours ###
-            for i in range(graph.shape[1]):
-                ### if the two vertices, whichs bond is removed is in the corner (part of an angle) its force constant is set to 0 ###
-                if (pair[0] in corners[j,i]) and (pair[1] in corners[j,i]) == True:
-                    angle_k[j,i] = 0.
+#         if v in halogen_positions:
+#             spring_lengths[v][np.where(graph[v] == u)[0]] = 1.35#,1.76]
+#         else:
+#             spring_lengths[v][np.where(graph[v] == u)[0]] = 1.09
+
+#         ### For a pair of removed bonds, set the force constant that correspond to that bond to zero ###
+#         bond_k[u][np.where(graph[u] == v)[0]] = 0.
+#         bond_k[v][np.where(graph[v] == u)[0]] = 0.
+
+#         ### Set the out of plane constants for all three vertices around the nodes to zero ### 
+#         out_of_plane_k[u] *= 0.
+#         out_of_plane_k[v] *= 0.
+
+#         ### Go through all nodes ###
+#         for j in range(graph.shape[0]):
+#             ### and all neighbours ###
+#             for i in range(graph.shape[1]):
+#                 ### if the two vertices, whichs bond is removed is in the corner (part of an angle) its force constant is set to 0 ###
+#                 if (u in corners[j,i]) and (v in corners[j,i]) == True:
+#                     angle_k[j,i] = 0.
 
 def add_periphery(affected_children, parent_atom, n_carbon):
     ### This functions takes the affected children list and adds all the periphery atoms to the list in which the parent atoms appear ###

@@ -34,8 +34,6 @@ cubic_neighbours = isomer['cubic_neighbours']
 hexagons         = isomer['hexagons']
 pentagons        = isomer['pentagons']
 
-arc2cubic = make_arc2cubic(isomer)
-darc2carc = make_darc2carc(isomer,arc2cubic)
 
 #unfolding_subgraph = arcpos_to_unfolding(dual_neighbours,arcpos)
 uf_dg = unfolding_dual_graph(isomer,arcpos)
@@ -43,7 +41,7 @@ ufi_g, ufb_g = unfolding_bonds(uf_dg,isomer,arcpos)
 
 arc2cubic = make_arc2cubic(isomer)
 darc2carc = make_darc2carc(isomer,arc2cubic)
-faces = make_faces(dual_neighbours,arc2cubic)
+faces     = make_faces(dual_neighbours,arc2cubic)
 
 print(f"Root face is {faces[root_node]}, dual vertex {root_node}")
 
