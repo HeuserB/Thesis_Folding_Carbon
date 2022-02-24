@@ -1,5 +1,4 @@
 import sys
-
 import numpy as np
 import pyqtgraph.opengl as gl
 from matplotlib import cm
@@ -14,13 +13,36 @@ from geometry_functions import *
 
 
 class Unfolding(object):
-    def __init__(self, dual_unfolding, graph_unfolding_faces, graph_faces, graph_unfolding, graph, halogen_positions, root_node, bonds_toBe, angles_f):
+    def __init__(self, dual_unfolding, graph_unfolding_faces, graph_faces, graph_unfolding, graph, halogen_positions, root_node, bonds_toBe, angles_f, position_final):
 
         self.dual_unfolding         = dual_unfolding
         self.graph_unfolding        = graph_unfolding
         self.graph                  = graph
         self.root_node              = root_node  ### Index of the root face
         self.n_carbon               = len(graph_unfolding)
+        
+        ### Define the bonds which have to be formed and are therfore removed from the graph ###
+
+        if not isinstance(bonds_toBe, np.ndarray):
+            n_removed_bonds     = sum([bonds != [] for bonds in bonds_toBe]) // 2 
+            bonds               = np.empty([n_removed_bonds,2],dtype=int)
+            bond_id             = 0
+            for node_id, v in enumerate(bonds_toBe):
+                if v != []:
+                    if node_id not in bonds:
+                        bonds[bond_id][0]   = node_id
+                        bonds[bond_id][1]   = v[0]
+                        bond_id             += 1
+            self.bonds_toBe = bonds                         
+        else:
+            self.bonds_toBe = bonds_toBe
+
+        if halogen_positions is None:
+            halogen_positions = np.zeros(self.n_carbon,dtype=int)
+            #for i in self.bonds_toBe.flatten():
+                #halogen_positions[int(i)]    = 1
+
+        
         self.n_halogen              = len(np.where(halogen_positions != 0)[0]) 
         self.graph_unfolding_array,\
             self.periphery,\
@@ -32,35 +54,21 @@ class Unfolding(object):
         self.graph_unfolding_faces  = graph_unfolding_faces
         self.graph_faces            = graph_faces
         self.vertices_final         = None
-        self.halogen_positions      = halogen_positions
+        if halogen_positions is not None:
+            self.halogen_positions      = halogen_positions
         self.halogen_parent_atom    = np.where(self.halogen_positions!= 0)[0]
         self.hydrogen_parent_atom   = np.where(self.hydrogen_positions!= 0)[0]
+
+        print(f'Halogene position : {self.halogen_positions}')
+        print(f'length of halogene position: {len(self.halogen_positions)}')
         np.random.seed(12)  ### Define a random seed
 
         ### Dissociation energy and bond distacne matrix in the order H-F-Cl-C
         self.D_E = 4.184 * np.array([[436.002, 568.6, 431.8, 310.], [568.6, 156.9, 250.54, 485.] , [431.8, 250.54, 242.580, 351.], [310., 485., 351., 607.]])
         self.r_e = np.array([[0.74, 0.92, 1.27, 1.09], [0.92, 1.42, 1.648, 1.35] , [1.37, 1.648, 1.99 ,1.77], [1.09, 1.35, 1.77, 1.44]])
 
-        ### Final angles for the hinges ###
-        self.angles_f = angles_f
-
         ### initialise the faces around one node ###
         self.right_face = init_face_right(self.graph, self.graph_faces)
-
-        ### Define the bonds which have to be formed and are therfore removed from the graph ###
-
-        if not isinstance(bonds_toBe, np.ndarray):
-            n_removed_bonds     = sum([bonds != [] for bonds in bonds_toBe])
-            bonds               = np.empty([n_removed_bonds,2])
-            bond_id             = 0 
-            for node_id, v in enumerate(bonds_toBe):
-                if bonds_toBe != []:
-                    bonds[bond_id][0]   = node_id
-                    bonds[bond_id][1]   = v
-                    bond_id             += 1               
-
-        self.bonds_toBe = bonds_toBe
-
 
         ### Intitialise the spring constants and the optimal lenths ###
         self.spring_lengths = np.ones([self.n_carbon,3],dtype=np.float64)
@@ -109,7 +117,7 @@ class Unfolding(object):
         ### Define the mean vacuum bond parameters ###
         self.bond_angles = np.radians(np.array([108.,120.]))
         self.bonding_lengths = np.array([1.458,1.401])
-        self.k = np.array([390., 450., 260. , 0, 0, 100, 100]) * (6.022 * 1e8)#  * (6.022 * 1e8) # given on Lukas Wirtz p. 126
+        self.k = np.array([390., 450., 260. , 0., 0., 100., 100.]) * (6.022 * 1e8)#  * (6.022 * 1e8) # given on Lukas Wirtz p. 126
         self.bonding_lengths_halogens = np.array([1.35,1.76])
 
         ### Define the indices needed for the coulomb repulsion ###
@@ -150,10 +158,33 @@ class Unfolding(object):
         self.open_hinges = [[0,1,2],[3,4,5,6,7,8],[9,10,11],[12,13,14]]
         self.all_hinges = [[0,1,2],[3,4,5,6,7,8],[9,10,11],[12,13,14]]
 
+         ### Final angles for the hinges ###
+        if angles_f is not None:
+            self.angles_f = angles_f
+            
+        elif position_final is not None:
+            Nf = len(self.graph)
+            pent_id, hex_id = face_type(self.graph_faces)
+            closed_normals = np.zeros((Nf,3),dtype=float)
+
+            hexagons, pentagons = [], []
+            for face in self.graph_faces:
+                if len(face) == 5:
+                    pentagons.append(self.graph_faces)
+                elif len(face) == 6:
+                    hexagons.append(self.graph_faces)
+            hexagons, pentagons = np.array(hexagons), np.array(pentagons)
+            print(f'Pentgon Ids: {pent_id}')
+            #closed_normals[pent_id] = mean_normal(position_final, pentagons)
+            #closed_normals[hex_id] = mean_normal(position_final, hexagons)
+            #angles_final = [angle_vec(closed_normals[u],closed_normals[v],degrees=False) for u,v in self.hinges[0]]
+
+            #angles_final = calculate_final_angles(position_final, self.dual_unfolding, self.hinges)
+
         ### Define the steps to close the hinges ###
-        self.num_of_steps = 20000
-        self.angle_steps = np.linspace(np.pi, self.angles_f,self.num_of_steps + 1)
-        self.step_size =  (np.pi - self.angles_f) / self.num_of_steps
+        #self.num_of_steps = 20000
+        #self.angle_steps = np.linspace(np.pi, self.angles_f,self.num_of_steps + 1)
+        #self.step_size =  (np.pi - self.angles_f) / self.num_of_steps
 
         self.stage = 0  ### Set the stage to zero
 
@@ -164,10 +195,14 @@ class Unfolding(object):
         #self.color = set_colors(self.graph_faces)
         #self.faces = triangulate_polygone(self.graph_faces,self.n_carbon)
 
-        self.midpoints = np.zeros([len(self.graph_unfolding_faces),3],dtype=np.float64)
-        self.vertex_mesh = np.zeros([self.n_carbon + len(self.graph_unfolding_faces), 3],dtype=np.float64)
-        self.color = set_colors(self.graph_unfolding_faces)
-        self.faces = triangulate_polygone(self.graph_unfolding_faces,self.n_carbon)
+        self.midpoints          = np.zeros([len(self.graph_unfolding_faces),3],dtype=np.float64)
+        self.vertex_mesh        = np.zeros([self.n_carbon + len(self.graph_unfolding_faces), 3],dtype=np.float64)
+        self.color              = set_colors(self.graph_unfolding_faces)
+        subfaces                = []
+        for face in self.graph_unfolding_faces:
+            if len(face) > 0:   
+               subfaces.append(face) 
+        self.faces              = triangulate_polygone(subfaces,self.n_carbon)
         
         self.stepsize = 1e-3
 
@@ -180,6 +215,8 @@ class Unfolding(object):
 
         ### Define the out of plane bending constants ###
         self.out_of_plane_constants = np.ones_like(self.graph, dtype=np.float64) 
+        print(f'Bonds to be: {self.bonds_toBe}')
+        print(f'Halogene parent atom: {self.halogen_parent_atom}')
         remove_bonds(self.graph, self.bonds_toBe, self.spring_constants, self.angle_constants, self.out_of_plane_constants, self.spring_lengths, self.halogen_parent_atom)
 
         ### define the index array to add the force to ###
@@ -257,13 +294,14 @@ class Unfolding(object):
         r = self.r_e[3* np.ones_like(self.parent_atom), self.periphery_type]
 
         grad_periphery = - morse_grad(R_per, D_per, r, D_E, k) * 0.
+        print(f'Periphery:  {self.periphery}')
         tmp = np.vstack([np.repeat(np.where(self.spring_constants == 0)[1][:,NA],3,axis=1)[NA,...],np.repeat(np.array([0,1,2])[NA,:],self.periphery, axis=0)[NA,...]])
         grad_pot[np.repeat(self.parent_atom[...,NA],3,axis=1), tmp[0], tmp[1]] -= grad_periphery    
 
         #grad_pot = grad_harm_pot(self.D_carbon, self.R_carbon, self.spring_lengths, self.spring_constants)
         #print(grad_periphery.shape)
         #print(np.sum(grad_pot, -1).shape)
-        return grad_pot, grad_periphery #np.concatenate([np.sum(grad_pot, -2), grad_periphery])
+        return grad_pot, grad_periphery*0. #np.concatenate([np.sum(grad_pot, -2), grad_periphery])
 
     def update_force_angle(self):
         ### Calculate the gradient in regard to the three angles around a node ###

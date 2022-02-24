@@ -1024,6 +1024,7 @@ def remove_bonds(graph, bonds_removed, bond_k, angle_k, out_of_plane_k, spring_l
     ### those vertices are in the removed bonds list, we set the correspodning angular k to zero  ###
     
     for pair in bonds_removed:
+        print(f'Removing bond: {pair}')
         if pair[0] in halogen_positions:
             spring_lengths[pair[0]][np.where(graph[pair[0]] == pair[1])[0]] = 1.35#,1.76]
         else:
