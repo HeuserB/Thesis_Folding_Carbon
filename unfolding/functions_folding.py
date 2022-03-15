@@ -674,8 +674,9 @@ def plot_graph_3D(graph):
     #%matplotlib notebook
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
+    ax.set_box_aspect(aspect = (1,1,1))    
     ax.scatter(X[:,0],X[:,1],X[:,2], color="r")
-    
+
     for vertex in range(len(graph.graph_unfolding)):
         for neighbour in graph.graph_unfolding[vertex]:
             line = np.vstack([graph.vertex_coords[vertex],graph.vertex_coords[neighbour]]).T
@@ -1026,9 +1027,7 @@ def replace_periphery_constants(graph_unfolding_array, N, periphery_type,spring_
             if v>= N:           # v is a periphery atom (hydrogen or halogen)
                 # TODO: Once we want to make simulation more physical, periphery bonds should be physically appropriate instead of same as C-C.
                 spring_lengths[u][i] = periphery_bond_lengths[periphery_type[v-N]]                
-#                spring_constants[u][i] = 0 # NB: Switches off periphery for debugging
-                print(f"Setting optimal bond length of {u}--{v} to {spring_lengths[u][i]}")                
-#                out_of_plane_k[v] = 0
+                #print(f"Setting optimal bond length of {u}--{v} to {spring_lengths[u][i]}")                
                 
 
 # # Replace cut bonds with bonds to periphery atoms: the hydrogen and halogens
