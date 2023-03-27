@@ -159,4 +159,5 @@ def calculate_final_angles(closed_vertices, graph_unfolding_faces, hinges):
 
     # calculate the angles between those two leg-vectors
     angles = angle_vec(hinge_legs[:,0,:],hinge_legs[:,1,:],degrees=False)
+    print(f'Calculate final angels returns: {angles}')
     return angles

@@ -42,7 +42,6 @@ class MainWindow(Qt.QMainWindow):
         self.vp = Plotter(qtWidget=self.vtkWidget)
         self.vp._timer_event_id = None
         self.cbid = self.vp.addCallback("key press", self.onKeypress)
-        self.imgActor = Picture("https://icatcare.org/app/uploads/2018/07/Helping-your-new-cat-or-kitten-settle-in-1.png")
         self.text2d = Text2D("Use slider to change contrast")
 
         #self.slider = Qt.QSlider(1)
@@ -73,6 +72,7 @@ class MainWindow(Qt.QMainWindow):
 
     def on_click(self):
         active_hinge = self.hinge_queque.pop(0)
+        print(f'Self final angles are: {self.angles_final}')
         update_transform(self.planar_geometry,active_hinge, self.hinges, self.affected_vs, self.angles_final[active_hinge])
         self.mesh.points(self.planar_geometry)
         self.spheres.pos = self.planar_geometry

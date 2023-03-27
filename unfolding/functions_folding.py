@@ -377,7 +377,6 @@ def update_transform(coordinates_3D, hinge_0, hinges, affected_children, delta_p
     # This function will update all child node vertices which follow the given parent node
     # it will require the traversed hinges forming the rotational axis to be in the correct
     # manner, meaning right-handed or left-handed self-consitentley
-    
    
     # the vertices which are connected to hinge_0 are connecting_faces
     # Note: this includes the two vertices forming the rotational axis

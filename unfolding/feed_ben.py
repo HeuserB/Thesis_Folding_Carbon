@@ -3,7 +3,7 @@ import sys, numpy as np
 from numpy.lib.function_base import angle
 from functions_folding import *
 from geometry_functions import *
-import data.C120D6_fat as data
+#import data.C120D6_fat as data
 from vedo import show, Spheres, Mesh, printc
 from plot_vedo import plot_unfolding_vedo, MainWindow
 from PyQt5 import Qt
